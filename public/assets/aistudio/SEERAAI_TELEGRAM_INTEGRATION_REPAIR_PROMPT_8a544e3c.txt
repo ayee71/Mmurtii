@@ -1,0 +1,265 @@
+SEERAAI PRO — TELEGRAM BOT, SERVERLESS BACKEND, MINI APP & LEGAL ARCHIVE INTEGRATION
+MASTER AUDIT AND REPAIR PROMPT
+
+ROLE
+You are a senior TypeScript/Node.js serverless engineer and application-security reviewer working inside the EXISTING SEERAAI PRO repository. Your task is to inspect, verify, and repair the existing Telegram integration so that it reliably connects Telegram Bot @AyebeBot, the SEERAAI PRO Serverless Backend, the Telegram Mini App, the SEERAAI PRO Web App, and the existing legal-archive feed.
+
+IMPORTANT: This is an EXISTING production application. Do not create a replacement application, Firebase project, database, storage bucket, bot, Cloud Run service, or parallel backend. Preserve existing users, documents, legal records, features, API contracts, environment configuration, authentication, and integrations.
+
+1. TARGET ARCHITECTURE AND EXISTING OBSERVATIONS
+The implementation is intended to provide the following behavior. Treat the details below as the expected baseline supplied by the project owner, but independently inspect the current source code and verify each item. Do not claim that anything is working merely because this prompt says it should work.
+
+- Telegram Bot: @AyebeBot
+- Legal archive/source channel: @seeraai_ethio
+- Backend runtime: the existing SEERAAI PRO serverless backend.
+- Existing health endpoint: GET /api/telegram/health
+- Existing webhook endpoint: POST /api/telegram/webhook
+- Existing live archive endpoint: GET /api/telegram/live-legal-feed
+- Expected health response currently includes status: "running" and configured: true when the service is genuinely configured and operational.
+- The legal archive feed is intended to provide relevant FSC Cassation precedent records, Oromia Rural Land Proclamation 242/2014 materials, and labour-related rulings to both the Telegram Mini App and the SEERAAI PRO Web App.
+- The current design uses Telegram webhook mode, server-side configuration, HTTPS webhook URL resolution, request authentication, and bounded request/response timeouts.
+
+Do not assume that these observations prove end-to-end correctness. Verify the deployed configuration and source-code behavior separately. Preserve the existing response schemas unless a backward-compatible change is necessary and explicitly documented.
+
+2. FIRST PHASE: READ-ONLY REPOSITORY AUDIT
+Before editing any file:
+
+A. Inspect the package manifest, TypeScript configuration, server entry points, serverless route registration, deployment configuration, Telegram service files, environment-variable declarations, Firebase/Firestore integration, Mini App initialization code, Web App API client, and existing tests.
+B. Locate the exact implementation of all three routes:
+   - GET /api/telegram/health
+   - POST /api/telegram/webhook
+   - GET /api/telegram/live-legal-feed
+C. Trace the complete data flow:
+   Telegram Bot API -> webhook route -> update validation -> update processing/persistence -> legal archive store -> live-legal-feed API -> Mini App and Web App UI.
+D. Identify the current hosting provider/runtime and its actual request timeout, background execution, environment-variable, and durable-queue constraints. Do not assume that a background Promise continues executing after a serverless response has been returned.
+E. Inspect current Firestore collections, indexes, rules, and data models before changing storage logic. Reuse the existing archive schema and collection where possible.
+F. Establish baseline tests and current behavior before modifications. Record actual failures and verified successes.
+
+Do not replace an existing working implementation simply to make the code look cleaner. Prefer the smallest safe patch. Do not invent file paths, route handlers, database collections, or package versions. Do not rewrite unrelated parts of SEERAAI PRO.
+
+3. TELEGRAM WEBHOOK: CORRECT AUTHENTICATION AND RELIABLE PROCESSING
+Implement or repair POST /api/telegram/webhook using Telegram Bot API webhook semantics.
+
+A. Webhook secret validation
+- Configure Telegram setWebhook with a strong, randomly generated secret_token stored only in the server-side secret manager/environment.
+- Validate the incoming HTTP header X-Telegram-Bot-Api-Secret-Token against the configured secret_token.
+- Use a constant-time comparison where supported.
+- Reject missing or incorrect secret headers when webhook-secret validation is enabled. Fail closed if production configuration requires a secret but it is absent.
+- Never log, return, expose, or put the bot token or webhook secret into frontend code, source maps, health responses, error messages, or ordinary logs.
+- Do NOT describe Telegram's webhook secret-token header as an HMAC signature. Telegram's Bot API webhook authentication mechanism is the secret_token request header. HMAC-SHA-256 validation belongs to Telegram Mini App initData validation (see Section 4). If the application also has a separately designed HMAC mechanism, document its exact message format and key management; do not confuse it with Telegram's native webhook header.
+
+B. Update validation and idempotency
+- Validate the JSON body and supported Telegram Update shapes before processing.
+- Handle at least message, edited_message, channel_post, and edited_channel_post updates when they are part of the currently configured allowed_updates list and the existing product behavior requires them.
+- Use update_id as the unique idempotency key for webhook updates. Persist processing state or an equivalent durable deduplication record using the existing storage architecture.
+- A duplicate update must not create duplicate archive records or send duplicate bot replies.
+- Handle out-of-order delivery safely; do not rely on update_id being perfectly sequential.
+- For channel posts, use the Telegram chat identifier and message_id as a stable archive identity. Preserve edited post revisions or update the existing record according to the current archive model; do not silently lose edit history if the system currently tracks it.
+- Reject malformed or unsupported payloads safely without crashing the server.
+
+C. Serverless execution and timeout control
+- The webhook handler must complete its synchronous work within the actual hosting platform's request budget.
+- Do not acknowledge an update with HTTP 200 before it has been durably accepted for processing. If a durable queue or job store is available, persist/enqueue first, then acknowledge.
+- Do not rely on an unawaited background Promise after sending the response. Serverless runtimes may freeze or terminate the invocation.
+- If no durable queue exists, use the safest pattern supported by the existing platform and storage. Do not add a new paid service or infrastructure resource without documenting it and obtaining owner approval.
+- Keep expensive legal classification, document extraction, AI analysis, and long-running Telegram API calls out of the initial webhook acknowledgment path. Execute them through the existing durable job/queue mechanism where available.
+- If durable acceptance fails, return a retryable non-2xx response so Telegram can retry. Combine this with idempotency to prevent duplicate side effects.
+- Set explicit timeouts for outbound Telegram Bot API calls and other external services. Respect Telegram 429 retry_after responses, retry transient network/5xx errors with bounded exponential backoff and jitter, and do not retry permanent 4xx errors blindly.
+
+D. Webhook lifecycle
+- Inspect the current webhook with getWebhookInfo when performing an authorized diagnostic.
+- Verify that the configured webhook URL matches the intended HTTPS endpoint, that pending_update_count is monitored, and that last_error_date / last_error_message are surfaced in protected diagnostics or operational logs.
+- Preserve webhook mode. Do not switch to getUpdates/long polling, call deleteWebhook, or set drop_pending_updates=true as part of a repair.
+- Do not call setWebhook on every application startup or on every health check. Webhook registration/rotation is a controlled provisioning action, not ordinary request handling.
+- Ensure Telegram's required HTTPS/TLS endpoint behavior is met by the existing hosting configuration.
+
+4. TELEGRAM MINI APP INITDATA: SERVER-SIDE HMAC VALIDATION
+The Telegram Mini App authentication process is distinct from webhook request authentication.
+
+A. The Mini App must send the raw Telegram.WebApp.initData string to the backend. Do not authenticate using initDataUnsafe or user IDs supplied independently by the browser.
+B. Validate initData on the server using Telegram's documented HMAC-SHA-256 procedure and the bot token (or an approved securely stored derived secret if the existing implementation uses one correctly):
+   - Parse the raw query-string fields without changing their original values.
+   - Exclude hash from the data-check-string and retain it for comparison.
+   - Sort the remaining key/value pairs alphabetically and join as key=value lines using newline characters.
+   - Derive the secret key using HMAC-SHA-256 with the literal key "WebAppData" and the Telegram bot token as the message, following Telegram's documented algorithm.
+   - Compute HMAC-SHA-256 over the data-check-string with that derived key.
+   - Compare the computed hexadecimal digest with the supplied hash using a constant-time comparison.
+C. Validate auth_date and reject expired/stale initData according to a documented short validity policy and reasonable clock-skew allowance. Do not accept arbitrarily old initData.
+D. Validate required user fields and parse them only after signature validation. Never trust browser-provided user_id, username, role, institutionId, or permissions without deriving/confirming them through the authenticated server-side identity and existing authorization model.
+E. Enforce the existing SEERAAI PRO role-based and institution-based access controls after Telegram identity validation. Telegram identity alone must not grant judge, registrar, administrator, auditor, or other privileged application roles.
+F. Never expose BOT_TOKEN or any derived secret to the client. Do not log raw initData, hash values, or full personal profile payloads.
+G. If the current Mini App uses a different approved validation library, inspect its compatibility and tests before changing it. Avoid introducing a dependency unless needed and compatible with the current runtime.
+
+5. HTTPS WEBHOOK URL RESOLUTION
+Repair automatic HTTPS URL construction without trusting attacker-controlled request headers.
+
+- Prefer a validated canonical public base URL from an existing server-only environment variable/configuration (for example, the project's current PUBLIC_BASE_URL or equivalent).
+- If the hosting platform provides trusted proxy metadata, use it only according to that platform's documented trust model.
+- Do not blindly trust arbitrary Host, X-Forwarded-Host, or X-Forwarded-Proto headers from public requests.
+- Require HTTPS in production and validate the final host against the expected deployment host/domain.
+- Keep local development behavior separate and explicit.
+- Do not invent a new custom domain, migrate the service, or alter the current Cloud Run/Firebase hosting arrangement.
+- Do not silently register a new webhook URL. First show the computed URL and current getWebhookInfo result; ask for owner approval before any production setWebhook operation.
+
+6. TELEGRAM LEGAL ARCHIVE FEED
+Repair GET /api/telegram/live-legal-feed so that it serves reliable, normalized, paginated archive records to both the Mini App and Web App.
+
+A. Source and provenance
+- The intended source channel is @seeraai_ethio. Verify that the bot has the required membership/administrator access to receive channel_post and edited_channel_post updates, where required.
+- Preserve the original Telegram channel name, chat identifier, message_id, post date, edit date, text/caption, supported entities, public post URL (only if it can be correctly established), and document/media metadata.
+- Keep the original Telegram post as provenance. Do not rewrite a Telegram post into an official legal source.
+- Telegram channel content is an archival/access source. It is not automatically an official Gazette, authenticated court copy, or binding judicial authority. Maintain explicit verification metadata and source classification for every legal item.
+- Do not label FSC Cassation decisions, Oromia Rural Land Proclamation 242/2014 materials, or labour rulings as verified/current/binding solely because they appear in the channel. Preserve those categories as archive topics; legal validity and authority must be verified against an official or authenticated source before the legal research engine treats them as verified authority.
+
+B. Critical historical-archive limitation
+- The standard Telegram Bot API webhook delivers updates such as new channel_post and edited_channel_post events. Do not assume that the Bot API provides a general method to read the entire historical message history of a channel.
+- Build the live feed from records already persisted by the current application and newly received webhook updates.
+- If historical posts are missing from the existing archive, report the gap. Do not fabricate backfilled records, scrape private content, or create/use a personal Telegram user session without explicit authorization and a documented lawful access method.
+- Any proposed historical backfill must identify its source, permissions, technical method, data coverage, and risks, and must be submitted separately for owner approval.
+
+C. Feed API behavior
+- Preserve the existing response contract consumed by the Telegram Mini App and SEERAAI PRO Web App. Inspect the frontend clients before changing field names or pagination behavior.
+- Provide stable record IDs, deterministic ordering, pagination/cursors, category/type filters, and safe handling of edited/deleted/unavailable posts according to the existing data model.
+- Prevent duplicate posts. Use an appropriate unique key such as channel/chat ID plus message_id.
+- Return only fields required by the client. Do not expose private bot configuration, internal database paths, unneeded personal data, or internal stack traces.
+- Add bounded caching only where it cannot make newly received posts appear permanently stale. Invalidate or refresh relevant cache entries when new posts arrive.
+- Validate query parameters, limit maximum page size, and guard against unbounded reads.
+- Handle missing, malformed, or unavailable media safely. Do not promise that every Telegram media file is downloadable or permanently available.
+
+D. Legal-source metadata
+Where supported by the current schema, retain separate fields for:
+- sourcePlatform/sourceChannel;
+- telegramChatId and telegramMessageId;
+- sourcePostDate and editDate;
+- sourcePostUrl;
+- sourceDocumentTitle;
+- sourceType/category;
+- jurisdiction;
+- proclamationNumber / caseNumber only when explicitly present in the source;
+- articleNumbers / volume / page only when explicitly present in the source;
+- verificationStatus (for example: unverified, pending_review, verified_against_official_source);
+- officialVerificationSource and verifiedAt, only when actually checked;
+- contentHash or revision identifier if already supported by the current architecture.
+
+Do not manufacture missing legal metadata. Missing values must remain null/unknown, not be replaced with plausible-looking defaults. Preserve raw source content separately from summaries or AI-generated metadata.
+
+7. MINI APP AND WEB APP CONSUMPTION
+- Verify that both the Telegram Mini App and the SEERAAI PRO Web App call the same intended live feed endpoint or a documented shared service.
+- Confirm CORS/origin behavior is limited to the actual allowed frontends where applicable. Do not use wildcard CORS with credentialed requests.
+- Use the same stable data contract in both clients, with loading, empty, pagination, and error states.
+- Do not render untrusted Telegram HTML directly. Escape text and safely render only validated Telegram entities/formatting.
+- Handle network failures, timeouts, stale cache, duplicate records, pagination exhaustion, and missing media.
+- If the Mini App is opened outside Telegram, show a controlled unsupported/unauthenticated state rather than trusting fake Telegram user data.
+- Never allow archive browsing to bypass SEERAAI PRO authentication, institution access controls, or subscription/permission checks already enforced by the product.
+
+8. HEALTH, READINESS, AND MONITORING
+Repair GET /api/telegram/health without exposing secrets or overstating health.
+
+- Preserve its existing JSON contract if clients depend on it.
+- Distinguish process/liveness, configuration presence, webhook configuration, Telegram API connectivity (if actively probed), archive storage readiness, and feed readiness.
+- Keep status: "running" only when the process is alive. Keep configured: true only when all required server-side configuration values are present and valid; configuration presence alone does not prove end-to-end delivery.
+- Where the existing contract cannot represent detailed health, add backward-compatible diagnostic fields rather than changing/removing existing fields.
+- Do not make every health check perform an expensive Telegram API request. Use bounded probes, caching, or separate readiness diagnostics as appropriate to the runtime.
+- Never return bot tokens, webhook secret tokens, raw environment values, private channel credentials, or detailed internal stack traces.
+- Monitor safe operational metrics: last successful webhook receipt, last successfully processed update, pending/retry job counts, last feed sync, Telegram API errors, latency, and feed storage availability.
+- Use structured logs with redaction. Do not log full legal document content, raw Mini App initData, tokens, secrets, or unnecessary personal data.
+
+9. ERROR HANDLING AND OPERATIONAL RESILIENCE
+- Use one consistent error-handling strategy for webhook, feed, and Mini App authentication.
+- Distinguish client errors, authentication failures, rate limits, Telegram API failures, storage failures, and transient infrastructure errors.
+- Apply bounded timeouts to outbound calls; use AbortSignal or the runtime's supported equivalent where appropriate.
+- Retry only transient failures and use bounded exponential backoff with jitter. Respect Telegram's retry_after where provided.
+- Ensure retries cannot duplicate bot messages or archive entries.
+- Avoid unbounded loops, unbounded feed queries, unbounded response payloads, and memory-only queues.
+- Ensure cold starts do not re-register the webhook, create duplicate listeners, or trigger repeated background jobs.
+
+10. ENVIRONMENT VARIABLES AND SECRETS
+- Inspect existing environment variable names first. Reuse the current names where practical to avoid breaking deployment configuration.
+- Required secret material must remain server-side and be supplied through the existing secret manager/environment mechanism.
+- Validate required values at startup or route initialization without printing their values.
+- Document missing configuration by variable NAME only, never by value.
+- Do not put BOT_TOKEN, webhook secret, HMAC key, or credentials in Vite/client-prefixed variables, frontend bundles, Firestore documents readable by clients, GitHub commits, screenshots, or logs.
+- Do not rotate secrets or modify production secret values without explicit owner approval.
+
+11. TEST PLAN — TESTS MUST ACTUALLY RUN
+Create or update automated tests using the repository's existing test framework. Do not claim a test passed unless it was executed and its result was observed.
+
+A. Webhook tests
+- Valid secret header and valid update are accepted.
+- Missing secret header is rejected when configured.
+- Invalid secret header is rejected.
+- Malformed JSON / malformed Update is handled safely.
+- Duplicate update_id is idempotent.
+- Out-of-order updates do not corrupt state.
+- New channel_post is archived once.
+- edited_channel_post updates the correct record or revision.
+- Storage failure returns retryable failure and does not falsely mark the update complete.
+- Unsupported update type is acknowledged/ignored safely according to the documented policy.
+
+B. Mini App authentication tests
+- Valid Telegram initData passes.
+- Invalid hash fails.
+- Expired auth_date fails.
+- Malformed or missing auth_date fails.
+- Tampered user data fails.
+- Frontend-supplied user ID/role cannot override verified identity or SEERAAI PRO authorization.
+- Raw initData and secrets never appear in logs or responses.
+
+C. Feed tests
+- Existing archive entries are returned with the expected response schema.
+- New channel posts appear in the feed after durable processing.
+- Duplicate webhook delivery creates one feed record.
+- Pagination is stable and bounded.
+- Category filters work for the existing supported categories.
+- Missing page/article/case metadata remains missing; no defaults are fabricated.
+- A Telegram archive entry is not automatically promoted to verified legal authority.
+- Mini App and Web App clients both parse the response correctly.
+
+D. Health and URL tests
+- Health output distinguishes running from configured/ready.
+- Health responses never expose secrets.
+- HTTPS URL generation uses trusted canonical configuration and rejects unsafe host/header injection.
+- Production URL is verified against getWebhookInfo in an authorized diagnostic.
+
+E. Integration and regression tests
+- Run the existing test suite, lint, TypeScript type-check, and production build if available.
+- Test against mocked Telegram Bot API responses first.
+- Perform live read-only diagnostics only when credentials and authorization are already available.
+- Do not send real user messages, alter webhook configuration, rotate secrets, modify live archive data, or deploy during tests unless the owner has explicitly approved that exact operation.
+
+12. CHANGE CONTROL — STRICT PRODUCTION SAFETY
+- Do not deploy, publish, migrate, delete, overwrite production records, alter Firestore/Storage rules, change the Firebase project, change Cloud Run services, set/delete webhooks, drop pending updates, rotate secrets, or create billable infrastructure without explicit owner approval for the exact operation.
+- Do not delete or recreate any real data or collection.
+- Preserve existing users, user roles, legal documents, legal archive entries, API endpoints, bot identity, and application integrations.
+- If a schema change is unavoidable, first propose a backward-compatible migration plan and explain rollback. Do not execute it without approval.
+- Keep the patch limited to Telegram integration unless another issue is directly blocking it; report unrelated issues separately.
+
+13. REQUIRED DELIVERABLES
+After inspection and any safe local code repair, provide:
+1. Current-state audit: what is confirmed working, failing, unverified, or blocked.
+2. Exact files inspected and changed.
+3. A concise data-flow diagram from Telegram through backend/storage to both clients.
+4. Webhook authentication explanation distinguishing Telegram secret_token header from Mini App HMAC initData validation.
+5. Archive-feed source/provenance explanation and any historical-backfill limitation.
+6. Environment variable NAMES required (never secret values).
+7. Tests actually executed, with pass/fail counts and relevant output.
+8. Remaining risks and steps requiring owner approval.
+9. Rollback instructions for every production-relevant change.
+10. Final status using exactly one of:
+   - READY FOR HUMAN RELEASE APPROVAL
+   - NOT READY — REPAIR REQUIRED
+   - BLOCKED — REQUIRED ACCESS OR INFORMATION MISSING
+
+Do not say "fully working", "verified", "secure", or "production ready" unless end-to-end evidence supports that exact claim. Clearly distinguish source-code tests, local integration tests, live read-only diagnostics, and production deployment verification.
+
+14. FIRST ACTION
+Start with a read-only audit of the existing repository and report the current implementation of:
+- /api/telegram/health
+- /api/telegram/webhook
+- /api/telegram/live-legal-feed
+- Mini App initData validation
+- archive persistence and feed consumption in both clients
+
+Then present a minimal repair plan. Implement only safe local changes within the existing application. Stop and request explicit approval before any production mutation or deployment.
+
+END OF PROMPT

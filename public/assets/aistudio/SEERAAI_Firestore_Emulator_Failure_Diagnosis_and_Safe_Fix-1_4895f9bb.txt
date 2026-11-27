@@ -1,0 +1,52 @@
+SEERAAI PRO — PHASE 8B FIRESTORE EMULATOR FAILURE DIAGNOSIS
+STRICT CANDIDATE-ONLY / NO PRODUCTION DEPLOYMENT
+
+CONTEXT FROM THE ACTUAL GITHUB ACTIONS RUN
+- Workflow: rules-emulator-tests
+- Job: rules-tests
+- The GitHub runner successfully installed Java 17, Node 22, dependencies and Firebase CLI.
+- TypeScript check and production build passed.
+- Firestore emulator started against demo-seeraai-test.
+- Firestore suite result: 15/17 passed; tests [7] and [10] failed.
+- Test [7] error includes: "Property dataUrl is undefined" and "Property admin is undefined".
+- Test [10] error includes: "Property admin is undefined".
+- Hashes-after/unchanged check and evidence upload passed.
+- The final guard correctly failed the job because evidence/exit_code.txt contained 1.
+- package.json test script is: npx tsx tests/firestore.rules.test.ts && npx tsx tests/storage.rules.test.ts. Because the Firestore suite exited 1, the Storage test command may not have run. Verify this from the actual test output; do not claim Storage tests passed.
+
+TASK
+Inspect the exact checked-out candidate files and diagnose the two failing Firestore test cases. Inspect at minimum:
+- firestore.rules.phase8b5.3.integrated.candidate
+- tests/firestore.rules.test.ts
+- storage.rules.phase8b5.4.integrated.candidate
+- tests/storage.rules.test.ts
+- package.json and package-lock.json
+- firebase.emulator.test.json
+- .github/workflows/rules-test.yml
+- SHA256SUMS.txt / candidate integrity manifest, if present
+
+INVESTIGATE THESE SPECIFIC ISSUES
+1. Test [7] creates court_documents/doc_a2 with institutionId, createdBy, title and isPublic, but no dataUrl. Inspect every candidate rule that reads incoming().dataUrl. Firebase Security Rules direct access to a missing map field can produce an evaluation error. Determine whether dataUrl is intentionally optional. If optional, propose a safe default-value map lookup (for example incoming().get('dataUrl', null)) while preserving the existing 64 KB limit and all authorization checks. Do not weaken institution scoping or role checks.
+2. The candidate isAdmin() helper appears to access request.auth.token.admin and request.auth.token.role directly. The failed tests show the admin property is absent for normal staff tokens. Inspect all custom-claim accesses that may be absent (admin, role, courtRole, institutionId, legalContentManager, etc.). Propose safe default-value lookups for optional claims (for example request.auth.token.get('admin', false)), preserving strict claim-based admin authorization. Never promote staff roles to admin.
+3. Test [10] expects a legal_expert to create legislation_repository/proc_new. Inspect the actual rule for /legislation_repository/{id} and the isLegalRepositoryManager() helper. The test expectation and current isAdmin-only rule may conflict. Do not silently broaden permissions. Determine from the app's documented authorization model whether legal_expert should manage this repository. Present both the policy decision and the minimal candidate-only change required; if evidence is insufficient, flag for owner approval rather than granting access automatically.
+4. Verify whether the Storage rules suite ran at all. The package.json uses `&&`, so an earlier Firestore failure can prevent Storage tests from starting. Report the precise evidence. Recommend a way to run/report Firestore and Storage suites independently while still failing the overall CI job if either suite fails.
+5. Explain why the emulator step can show a green check while the overall job fails: the workflow captures the emulator exit code, exits 0 to preserve evidence upload, then the final guard fails when the stored code is nonzero. Verify this against the workflow file.
+
+OUTPUT REQUIRED
+A. Exact root causes for test [7] and [10], with file paths and line numbers from the actual checkout.
+B. Separate: rules defect, test-fixture defect, or authorization-policy mismatch.
+C. Minimal proposed unified diffs, candidate files only. Do not edit the live production firestore.rules or storage.rules.
+D. A test plan proving positive and negative authorization cases still behave correctly, including cross-institution denial, ordinary/unverified/anonymous denial, admin-only restrictions and the 64 KB dataUrl limit.
+E. A plan to run Firestore and Storage suites independently and preserve the evidence artifact.
+F. A list of files that would change and confirmation that production configuration/rules remain untouched.
+G. Report any line-number or file-version mismatch between the run log and the currently checked-out branch. Do not pretend a newer branch file is the exact file used by the failed run.
+
+STRICT SAFETY RULES
+- Do not deploy to Firebase, Cloud Run, or GitHub Pages.
+- Do not modify firestore.rules, storage.rules, firebase.json, Firebase project settings, secrets, authentication users, or production data.
+- Do not commit, push, merge, create/delete branches, or trigger another workflow.
+- Do not weaken any security rule just to make a test pass.
+- Do not change test expectations merely to make CI green unless the authorization policy explicitly requires that change.
+- First inspect and report. Show exact diffs for human review. Make no edits until separately authorized.
+- Never print secret values or ask for credentials.
+- Distinguish PASS, FAIL, BLOCKED and NOT RUN accurately.

@@ -1,0 +1,162 @@
+SEERAAI PRO — OPTION C
+CANDIDATE-ONLY LEGAL EXPERT AUTHORIZATION DESIGN & TEST PLAN
+READ-ONLY PLANNING PROMPT FOR GOOGLE AI STUDIO / GEMINI CHAT
+
+PROJECT CONTEXT
+- Product: SEERAAI PRO
+- GitHub repository: ayee71/SEERAAI-
+- Candidate branch intended for isolated work: ci/rules-emulator-tests
+- Firebase project: leafy-rush-xvd6f
+- Relevant candidate rules file: firestore.rules.phase8b5.3.integrated.candidate
+- Relevant tests: tests/firestore.rules.test.ts and tests/storage.rules.test.ts
+- Relevant workflow: .github/workflows/rules-test.yml
+
+USER'S APPROVED POLICY DECISION
+The user has selected OPTION C for the Legal Expert authorization policy.
+
+Interpret and implement the policy narrowly:
+1. An authenticated user whose verified authorization role is `legal_expert` may manage the legal repository collection `legislation_repository` only to the extent explicitly allowed by the existing helper `isLegalRepositoryManager()` and the approved Option C policy.
+2. The `legal_expert` role must NOT automatically become `admin` or `superadmin`.
+3. The role must NOT gain authority to manage institution users, change roles/claims, access admin-only logs, impersonate users, or access another institution's private court documents/cases.
+4. Preserve institution boundaries and all existing deny-by-default behavior.
+5. Do not silently broaden permissions. Inspect the exact current helper and the existing data model first. If Option C's precise scope cannot be established from the checked-in candidate files and this prompt, STOP and report the ambiguity rather than guessing.
+6. If `legislation_repository` is global/shared rather than institution-scoped in the current data model, do not invent an `institutionId` requirement. Explain the actual current data model and propose the narrowest safe policy consistent with Option C.
+
+CURRENTLY REPORTED CI FAILURES TO ADDRESS IN THE DESIGN
+A. Firestore Test [7] fails for a court document create because the incoming document omits `dataUrl`. The rule reportedly accesses `incoming().dataUrl` directly and the Firestore Rules evaluator reports:
+   "Property dataUrl is undefined on object."
+   Candidate location previously reported: firestore.rules.phase8b5.3.integrated.candidate, around lines 595–605, match /court_documents/{docId}.
+   Required design: optional-field access must be safe when `dataUrl` is absent, while preserving the existing 64 KB (65536 bytes) limit and all other document validation. Consider `.get('dataUrl', null)` or an explicit key-existence check, but inspect the actual rules syntax and surrounding conditions before recommending the exact expression.
+
+B. Firestore Test [10] fails because an authorized `legal_expert` is expected by the test to create/update `legislation_repository`, but the collection rule reportedly permits writes only through `isAdmin()`.
+   Candidate location previously reported: around lines 149–152, match /legislation_repository/{id}.
+   Existing helper reportedly named `isLegalRepositoryManager()` and recognizes `isAdmin()`, `legalContentManager`, and certain court roles including `legal_expert`. Verify the exact implementation before relying on this description.
+   Required design: make the collection's authorization predicate consistent with the approved Option C policy, without granting `legal_expert` global admin privileges or unrelated permissions.
+
+C. Test runner currently uses:
+   `npx tsx tests/firestore.rules.test.ts && npx tsx tests/storage.rules.test.ts`
+   Because `&&` short-circuits, Storage tests may not run when Firestore tests fail.
+   Required design: run both suites independently, preserve each suite's exit code and output, and fail the overall workflow if either suite fails. Prefer separate explicit CI steps or a robust runner that captures both exit codes without masking failures.
+
+TASK — PLAN AND DESIGN ONLY
+Perform a careful read-only inspection of the current candidate files and produce a candidate-only security design and test plan based on Option C.
+
+DO NOT:
+- Modify, create, delete, rename, or format any file.
+- Edit production files or production configuration.
+- Change live Firebase rules or settings.
+- Deploy, publish, merge, push, commit, or trigger a production release.
+- Access, print, request, or expose secret values, tokens, service-account keys, or credentials.
+- Use the live Firebase project for tests.
+- Assume that a local workspace is the GitHub repository. Verify the current directory and branch status; if Git metadata is unavailable, say so.
+- Claim tests passed unless they were actually executed and the output is available.
+
+STRICT PRODUCTION ISOLATION
+The following files are production-sensitive and MUST remain untouched:
+- firestore.rules
+- storage.rules
+- firebase.json
+
+All proposed changes must be limited to candidate/test/CI files, and even those must remain unchanged during this planning-only task. The emulator project must remain `demo-seeraai-test`; never substitute the live project ID.
+
+REQUIRED INSPECTION
+1. Confirm whether the workspace is a Git repository. Report current branch and working-tree status only if verifiable.
+2. Inspect the exact current contents of:
+   - firestore.rules.phase8b5.3.integrated.candidate
+   - tests/firestore.rules.test.ts
+   - tests/storage.rules.test.ts
+   - package.json
+   - .github/workflows/rules-test.yml
+   - firebase.emulator.test.json
+3. Verify the exact implementation and callers of:
+   - isLegalRepositoryManager()
+   - isAdmin()
+   - any institution-membership / verified-email / role-check helpers used by the relevant matches.
+4. Verify the exact Firestore match blocks and line numbers for:
+   - /legislation_repository/{id}
+   - /court_documents/{docId}
+   - any catch-all match that may also affect these paths.
+5. Confirm whether `dataUrl` is required, optional, or legacy in the court-document data model. Do not infer from one test alone.
+6. Inspect the existing test contexts and assertions for Test [7] and Test [10]. Check whether their expected behavior matches the approved policy and current schema.
+7. Inspect package.json scripts and workflow logic to determine how both test suites can run independently while preserving evidence.
+
+DESIGN REQUIREMENTS
+A. Legal Expert authorization
+- State exactly which operations `legal_expert` may perform on `legislation_repository` (read/create/update/delete), based on Option C and the actual schema.
+- State which operations remain denied.
+- Ensure legal_expert authorization is checked by role/claim and any required email-verification/institution checks already used by the project.
+- Ensure `legal_expert` cannot self-promote, set `admin: true`, set `superadmin`, change `courtRole`, or change `institutionId`.
+- Ensure cross-institution access remains denied wherever institution scoping applies.
+- Do not grant permissions to other roles merely because they are included in a helper unless Option C and existing tests explicitly support that grant. Identify any overbroad helper behavior as a separate risk.
+
+B. Optional `dataUrl`
+- Propose a safe optional-field validation expression.
+- Preserve the existing 65536-byte / 64 KB ceiling and any current URL/type constraints.
+- Test both absent `dataUrl` and valid present `dataUrl`.
+- Test invalid type, malformed value (if validation exists), and oversized value.
+- Do not weaken unrelated court-document checks.
+
+C. Independent test execution
+- Design execution so Firestore and Storage suites both run even if one fails.
+- Preserve separate logs and exit codes, e.g.:
+  evidence/firestore_output.txt
+  evidence/firestore_exit_code.txt
+  evidence/storage_output.txt
+  evidence/storage_exit_code.txt
+- Overall workflow must fail if either suite fails.
+- Do not let `set +e`, pipelines, `tee`, or shell exit handling accidentally convert a failed test into a successful workflow.
+- Keep emulator-only project `demo-seeraai-test`; no deploy command.
+
+REQUIRED TEST MATRIX
+Firestore — positive:
+1. Authorized legal_expert can perform only the approved operations on legislation_repository.
+2. Authorized legal_expert cannot gain admin/superadmin privileges through repository writes.
+3. Verified-email and required institution checks are enforced where applicable.
+4. Authorized judge creates a court document without `dataUrl` if the schema permits it.
+5. Authorized judge creates a court document with a valid `dataUrl` within the 64 KB limit.
+6. Existing permitted staff access to their own institution's court documents/cases remains intact.
+
+Firestore — negative:
+7. Ordinary user, guest, unverified-email user, and phone-only user cannot manage protected legal repository data unless the existing policy expressly permits a specific read.
+8. legal_expert cannot read/write another institution's restricted court documents or cases.
+9. legal_expert cannot create/update/delete admin logs or manage institution users unless separately and explicitly authorized.
+10. No user can self-assign legal_expert, admin, superadmin, courtRole, or institutionId.
+11. Court document with oversized or invalid `dataUrl` is denied.
+12. Cross-institution reads/writes remain denied.
+13. Existing audit-log immutability and guest isolation tests remain intact.
+
+Storage:
+14. Allowed file types and size limits remain as currently specified by the candidate rules and tests.
+15. Upload at the permitted boundary is accepted only if the existing policy defines it as inclusive.
+16. Upload above the limit by one byte is denied.
+17. Disallowed MIME type such as text/html is denied.
+18. Unauthorized users and cross-institution users remain denied.
+
+DELIVERABLE FORMAT
+Return a report with these headings:
+
+1. Executive Verdict — PLAN ONLY (no files changed)
+2. Verified Workspace / Branch State (or explicitly state not verifiable)
+3. Option C — Exact Legal Expert Permission Matrix
+4. Root Cause Confirmation — Test [7]
+5. Root Cause Confirmation — Test [10]
+6. Candidate-Only File Change Plan (list exact files and proposed scope; no edits)
+7. Independent Firestore / Storage Test Execution Design
+8. Positive and Negative Test Matrix
+9. Production Isolation Checklist
+10. Risks, Assumptions, and Unresolved Questions
+11. Exact Next Human Approval Required
+
+For every proposed rule change, show a minimal unified diff as a proposal only. Do not apply it.
+For every claim about a file, cite its exact path and line numbers from the current workspace. If line numbers cannot be verified, say so.
+Clearly distinguish:
+- VERIFIED from inspected files,
+- INFERRED from the provided CI log,
+- PROPOSED design,
+- NOT VERIFIED remote GitHub/live Firebase state.
+
+FINAL SAFETY GATE
+End with this exact status:
+`STATUS: PLAN ONLY — NO FILES MODIFIED — NO PUSH — NO MERGE — NO PRODUCTION DEPLOYMENT`
+
+Wait for the user's separate approval before implementing any proposed candidate-file changes.

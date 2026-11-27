@@ -1,0 +1,172 @@
+SEERAAI PRO — LEGAL GLOSSARY MODULE
+IMPLEMENTATION PROMPT FOR GOOGLE AI STUDIO
+
+PURPOSE
+Implement a complete, searchable, trilingual Legal Glossary inside the EXISTING SEERAAI PRO application. The glossary must preserve established Ethiopian legal terminology and provide accurate, concept-aligned entries in Afaan Oromoo, Amharic, and English. Authenticated authorized users must be able to submit new terms and proposed corrections. New or changed legal terminology must pass review before becoming part of the approved glossary.
+
+IMPORTANT PROJECT PRESERVATION RULES
+1. This is an enhancement to the existing SEERAAI PRO application, NOT a new application, replacement, demo, or separate Firebase project.
+2. Inspect the current repository and architecture before editing. Identify the existing navigation, routing, UI component conventions, localization/i18n system, authentication, role-based access control (RBAC), Firestore data model, backend/API patterns, audit logging, and test commands.
+3. Preserve the existing Firebase project (refer to the project as seeraai-tringular), Firebase Authentication users, existing Firestore data, Storage files, Cloud Run service, deployment configuration, and every existing feature. Do not create a new Firebase project or replace existing configuration.
+4. Do not rewrite unrelated modules. Make the smallest coherent changes and reuse existing components, services, design system, language settings, and security helpers.
+5. Do not delete, rename, migrate, or overwrite existing collections, documents, users, roles, environment variables, or deployment resources.
+6. Do not put API keys, service-account credentials, or privileged Firebase operations in frontend code. Use the existing trusted backend pattern for privileged writes and review actions.
+7. Before implementing, inspect the repository and report the actual files and services that will be changed. Then implement the feature; do not stop at a proposal or a mock-up.
+
+MODULE NAME AND UI
+Add a navigation item in the existing application:
+- Afaan Oromoo: Hiika Jechoota Seeraa
+- Amharic: የሕግ ቃላት መዝገበ ቃላት
+- English: Legal Glossary
+
+Use the existing app language selector and design system. Do not introduce a separate language system. The glossary must show the preferred legal term in all three languages, with the definition in all three languages. Let users choose which language is shown first, but do not hide the other two language equivalents.
+
+CORE USER FEATURES
+A. Search and browse
+- Provide a prominent search field that searches Afaan Oromoo, Amharic, and English at the same time.
+- Search preferred terms, approved synonyms/alternative spellings, and definitions. Return the same legal concept regardless of which of the three languages was used for the search.
+- Support exact phrase and ordinary word searches, case-insensitive matching, Unicode-safe text handling, punctuation/whitespace normalization, and pagination or incremental loading.
+- Use Unicode NFC normalization. Do not strip Ethiopic characters/marks or apply lossy transliteration. Do not use crude fixed-length stemming that can merge different legal concepts. Add language-specific normalization only where it is safe and tested.
+- Rank exact preferred-term matches above synonym matches, and synonym matches above definition-only matches. Show why a result matched where practical.
+- Include filters for legal domain, jurisdiction, and approved status. Ordinary users should see approved/published entries only. Reviewers may have a separate pending-review view.
+- Add clear empty, loading, error, and no-results states. Search must not expose pending submissions to unauthorized users.
+
+B. Glossary entry detail
+Each approved entry must include:
+- Stable term ID and canonical concept ID.
+- Preferred term in Afaan Oromoo, Amharic, and English.
+- Approved synonyms or alternative spellings for each language, clearly distinguished from the preferred term.
+- A clear, legally accurate definition in each language. The three definitions must describe the same legal concept, not merely be word-for-word translations.
+- Legal domain (for example: constitutional, civil, civil procedure, criminal, criminal procedure, evidence, family, land, labour, commercial, administrative, or other existing taxonomy).
+- Jurisdiction (Federal Ethiopia, Oromia, or other jurisdiction only when supported by the source).
+- Context/usage note where a term has a specific Ethiopian legal meaning or differs from ordinary usage.
+- Source references supporting the definition and terminology. Where available, record legislation/proclamation/regulation title and number, article, court decision/cassation reference, official legal dictionary, publication, page, and a verifiable URL or document reference.
+- Date/version and review status.
+
+C. Add a new term / suggest a correction
+- Add an “Add term” action for authenticated users who are permitted by the existing application access policy.
+- The submission form should support: source/preferred term, language, proposed equivalent terms in the other two languages (optional at submission), definitions, legal domain, jurisdiction, synonyms, context/usage note, and source references.
+- Allow a user to submit a term even when they do not know all three translations. Mark missing translations as incomplete and require a qualified reviewer to complete or verify them before publication.
+- Allow users to suggest corrections to an existing entry without directly overwriting the approved entry.
+- Validate required fields, maximum lengths, supported languages, URLs, and source-reference structure on the server as well as the client.
+- Show the submitter a confirmation and the status of their own submissions. Do not represent a pending suggestion as approved legal terminology.
+
+D. Review and publication workflow
+- Reuse the application's existing RBAC roles and permission checks. Inspect actual role names and helper functions before implementation; do not invent new privileged roles or grant additional access by default.
+- Users with the existing authorized legal-review/admin permission may review, edit, approve, reject, or request changes to submissions.
+- Auditors or read-only roles must not be able to alter glossary entries unless the existing policy explicitly grants that permission.
+- An entry may become approved/published only after a reviewer verifies all three language terms, all three definitions, legal domain, jurisdiction, and supporting references (or records a justified reason why a source reference is not applicable).
+- Do not auto-publish machine-generated translations. AI may suggest translations for a reviewer, but suggestions must be labelled “AI draft — unverified” and must never be presented as established legal terminology until a human reviewer approves them.
+- Preserve the previous approved version when a correction is approved. Record who submitted, who reviewed, what changed, when it changed, the decision, and the reason. Use the existing audit-log mechanism if available; otherwise add a narrowly scoped append-only audit record.
+- Rejected and pending submissions must remain distinguishable from approved glossary entries. Provide a reason/status to the submitter where permitted.
+
+LEGAL TERMINOLOGY ACCURACY — NON-NEGOTIABLE
+1. Do not invent legal terms, translations, definitions, statute numbers, article numbers, court decisions, citations, or URLs.
+2. Preserve established Ethiopian legal terminology. Do not replace a recognized legal term with a casual, approximate, or stylistically attractive expression.
+3. Treat Afaan Oromoo, Amharic, and English as legal languages with their own established terminology. A translation is acceptable only if it preserves the legal concept and its scope in the relevant jurisdiction.
+4. Do not assume that one English term always has one exact equivalent in Afaan Oromoo or Amharic. Where one-to-one equivalence is not reliable, record a carefully explained translation note, alternative equivalent, or “no exact equivalent” status for reviewer resolution.
+5. Distinguish legal meanings from ordinary meanings and distinguish concepts that are similar but not identical (for example, a right, remedy, cause of action, jurisdiction, admissibility, burden of proof, and standard of proof must not be collapsed into one concept).
+6. If Federal Ethiopian law and Oromia law use different terminology or definitions, preserve the distinction through jurisdiction and source metadata. Do not merge them into one definition without explanation.
+7. Definitions must be neutral, concise, conceptually accurate, and understandable to legal professionals and the public. They must not give case-specific legal advice.
+8. Every published definition must be traceable to its listed source(s) or explicitly marked as a reviewed general legal definition. Never fabricate a source to fill a required field.
+9. If reliable evidence is insufficient, save the submission as pending/incomplete and request legal review instead of guessing.
+
+DATA MODEL AND STORAGE
+First inspect the existing Firestore conventions and security rules. Adapt names/paths to the existing architecture; do not blindly create duplicate systems. Use a structure equivalent to the following if no suitable glossary model already exists:
+
+Approved glossary entry:
+{
+  termId: string,
+  conceptId: string,
+  terms: {
+    om: { preferred: string, synonyms: string[] },
+    am: { preferred: string, synonyms: string[] },
+    en: { preferred: string, synonyms: string[] }
+  },
+  definitions: { om: string, am: string, en: string },
+  usageNotes: { om?: string, am?: string, en?: string },
+  translationNotes?: { om?: string, am?: string, en?: string },
+  domain: string,
+  jurisdiction: string[],
+  sourceReferences: SourceReference[],
+  status: 'approved' | 'archived',
+  version: number,
+  createdAt: server timestamp,
+  updatedAt: server timestamp,
+  createdBy: string,
+  updatedBy: string,
+  reviewedAt: server timestamp,
+  reviewedBy: string
+}
+
+SourceReference should support structured fields such as sourceType, title, issuingBody, identifier/number, articleOrSection, volume, page, publicationDate, documentId, and url. Only store fields that are actually known and verified.
+
+Submission/revision record:
+{
+  submissionId: string,
+  submissionType: 'new_term' | 'revision',
+  targetTermId?: string,
+  proposedEntry: object,
+  status: 'pending' | 'needs_changes' | 'approved' | 'rejected',
+  submittedBy: string,
+  submittedAt: server timestamp,
+  reviewedBy?: string,
+  reviewedAt?: server timestamp,
+  reviewerNote?: string
+}
+
+Search index:
+- Generate normalized search fields/tokens from all three preferred terms, approved synonyms, and definitions.
+- Generate tokens in trusted backend code or the existing indexing service; never trust client-supplied search tokens.
+- Use the project's existing search service if it already supports multilingual legal search. Otherwise implement a Firestore-compatible indexed search approach with the required indexes and pagination.
+- Do not claim Firestore provides native full-text search. Document the search method and its limitations.
+- Ensure search results are restricted to approved glossary entries for normal users.
+
+SECURITY AND AUTHORIZATION
+- Reuse existing Firebase Authentication, institution-based RBAC, tenant/institution scoping, and audit utilities.
+- Enforce permissions in Firestore Security Rules and trusted backend handlers, not only by hiding buttons in the UI.
+- Ordinary authorized users may create a pending submission, but must not directly create or modify an approved term.
+- Only the existing reviewer/admin permission may approve, reject, publish, archive, or revise approved entries.
+- Prevent users from changing submittedBy, reviewedBy, status, version, timestamps, or audit fields through client payload manipulation.
+- Validate and sanitize input on the server. Limit payload size and reject malformed data.
+- Do not expose private user details or submissions from another user/institution unless current policy permits it.
+- Add tests proving unauthorized users cannot read restricted submissions or modify approved entries.
+
+INTEGRATION REQUIREMENTS
+- Integrate the glossary into the existing SEERAAI PRO navigation and routing without breaking current modules.
+- Use existing shared UI components, forms, notifications, loading states, error handling, and responsive/mobile design.
+- Keep the existing app's Afaan Oromoo, Amharic, and English language switching consistent.
+- If the application already has legal-source retrieval or a legal knowledge repository, reuse it for source references where appropriate. Do not silently copy large legal documents into the glossary; store references/IDs and short verified excerpts only where permitted.
+- Do not store glossary data or documents in localStorage, IndexedDB, GitHub, or frontend bundles as the source of truth. Use the existing Firebase/backend data layer.
+- Do not alter unrelated court-document upload, user-management, Telegram, legal research, or AI modules.
+
+TESTS AND ACCEPTANCE CRITERIA
+Implement and run the tests supported by the repository. At minimum verify:
+1. The glossary opens from the existing navigation in desktop and mobile layouts.
+2. A search in Afaan Oromoo finds the matching concept and displays all three language equivalents and definitions.
+3. A search in Amharic finds the same concept.
+4. A search in English finds the same concept.
+5. Search matches approved synonyms and handles Unicode NFC, case, punctuation, and extra whitespace safely.
+6. Similar but legally distinct terms remain separate concepts.
+7. Empty search, no-results, loading, backend failure, and pagination states work.
+8. An authorized user can submit a new term and can see the pending status.
+9. A normal user cannot publish a term or edit an approved record directly.
+10. An authorized reviewer can request changes, approve, or reject a submission.
+11. Approval creates a versioned approved entry and an audit record; previous approved content remains recoverable.
+12. An unverified or AI-generated translation cannot be published without reviewer approval.
+13. Source references are validated and are never fabricated by the application.
+14. Existing authentication, RBAC, legal research, court-document features, Telegram integration, and existing user data continue to work.
+15. TypeScript checks, production build, relevant unit/integration tests, and Firebase Rules Emulator tests pass.
+
+DELIVERY REQUIREMENTS
+After implementing, provide:
+A. A short summary of what was added.
+B. Exact list of files created or modified.
+C. Firestore collection/document structure and any indexes required.
+D. Security rule/backend permission changes and explanation.
+E. Test commands executed and their actual results. Never claim a test passed unless it was run and passed.
+F. Any environment variables or manual Firebase Console steps required. Do not ask for secrets and do not print secret values.
+G. Known limitations and any legal terminology entries that remain pending human review.
+
+FINAL INSTRUCTION
+Implement this module in the existing SEERAAI PRO codebase with minimal, safe, reviewable changes. Do not merely return a design, sample screen, or mock data. Do not seed invented translations. If an existing project detail is uncertain, inspect the code and follow the established implementation. If a required legal translation cannot be verified, mark it pending for qualified human review. Preserve all existing app functionality and data.

@@ -1,0 +1,691 @@
+SEERAAI PRO — COMPLETE FAKE FEATURE REMOVAL, REAL FUNCTIONALITY REPAIR & LEGAL ANSWER ACCURACY MASTER PROMPT
+
+================================================================================
+1. YOUR ROLE
+================================================================================
+
+Act as a Principal Software Engineer, Senior Full-Stack Developer, Firebase Architect, AI Reliability Engineer, Legal Technology Specialist, and Quality Assurance Engineer.
+
+You are working on the EXISTING SEERAAI PRO application.
+
+Your responsibility is to inspect the entire application, identify fake, simulated, nonfunctional, misleading, duplicated, broken, or unreliable features, and either repair them properly or remove them safely.
+
+The application must become a genuinely functional, trustworthy Ethiopian legal AI platform.
+
+Do not merely describe what should be done. Inspect the available code, make safe changes, run available tests, and report actual results.
+
+================================================================================
+2. EXISTING PROJECT — DO NOT REPLACE
+================================================================================
+
+Application name: SEERAAI PRO
+
+Existing codebase: "sai-ethio-legal-ai"
+
+Firebase project ID: "leafy-rush-xvd6f"
+
+Firestore database ID: "ai-studio-seeraaitrilingua-18431532-f42a-4a5a-b5b1-c3c0e6b05478"
+
+Storage bucket: "leafy-rush-xvd6f.firebasestorage.app"
+
+Preserve the existing project, application, users, accounts, documents, database, Storage, integrations, and working functionality.
+
+Do NOT:
+
+- Create a new application or replacement project.
+- Create a new Firebase project or database.
+- Replace the existing backend with an unrelated architecture.
+- Delete real user documents or collections.
+- Remove legitimate legal research or court-management features just because they are complicated.
+- Change production infrastructure without explicit approval.
+- Deploy or publish production changes automatically.
+
+First inspect the real project configuration. The values above identify the existing project; they do not authorize destructive changes.
+
+================================================================================
+3. MAIN OBJECTIVE — REMOVE FAKE FUNCTIONALITY
+================================================================================
+
+Perform a complete feature-by-feature audit of the application.
+
+Search the entire source code for:
+
+- Fake features.
+- Demo-only functionality exposed as real functionality.
+- Mock API responses used in production.
+- Hardcoded AI answers.
+- Hardcoded legal citations.
+- Artificially generated case numbers.
+- Fake judgments or fabricated court decisions.
+- Static dashboard statistics presented as real database data.
+- Buttons that do nothing.
+- Empty event handlers.
+- Placeholder click actions.
+- Fake upload and download success messages.
+- Simulated authentication.
+- Fake payment confirmations.
+- Fake document processing.
+- Fake OCR completion.
+- Fake audio transcription.
+- Fake Telegram connection status.
+- Fake institutional registration.
+- Fake user counts and activity figures.
+- Static sample records mixed into production data.
+- Artificial search results.
+- Fake AI streaming responses.
+- Local-only data presented as permanently saved.
+- Features that claim to be connected to Firebase but are not.
+- Features that claim to use OpenAI or Gemini but do not actually call the configured backend.
+- Duplicate features that create confusion.
+- Unused or abandoned modules exposed in the user interface.
+- TODO, FIXME, stub, placeholder, and mock implementations.
+- Error handlers that hide failures and display false success messages.
+
+Inspect the implementation, not just filenames or labels.
+
+For every suspicious feature, determine whether it is actually fake, incomplete, broken, legitimate, or simply unverified.
+
+================================================================================
+4. FEATURE DECISION RULE
+================================================================================
+
+Classify every feature into exactly one of these categories:
+
+A. KEEP — WORKING
+
+The feature is functional, connected to its real service, and verified by tests or direct evidence.
+
+Preserve it.
+
+B. REPAIR — REAL BUT BROKEN
+
+The feature has a genuine purpose and existing implementation, but it does not work correctly.
+
+Fix its code, integrations, validation, error handling, and user interface.
+
+C. REMOVE — CONFIRMED FAKE OR UNNECESSARY
+
+The feature is demonstrably fake, misleading, duplicated, or useless.
+
+Remove the fake production implementation, its misleading interface, and any obsolete references safely.
+
+Do not delete real user data or historical records.
+
+D. BLOCKED — CANNOT VERIFY
+
+The feature depends on an unavailable API, missing permission, missing secret, unavailable production access, or another external dependency.
+
+Do not pretend it works.
+
+Clearly mark it as blocked and do not show fake success.
+
+Do not delete a legitimate feature merely because its external service is temporarily unavailable.
+
+For every feature, provide:
+
+- Feature name.
+- Relevant source file.
+- Current behavior.
+- Actual evidence.
+- Classification.
+- Repair or removal performed.
+- Test result.
+
+================================================================================
+5. REPAIR ALL REAL APPLICATION FEATURES
+================================================================================
+
+Inspect and repair the following modules if they actually exist in the application.
+
+----------------------------------------
+A. Legal AI Chat
+----------------------------------------
+
+The chat interface must:
+
+- Accept user questions.
+- Send the question to the actual backend.
+- Call the configured AI service.
+- Retrieve relevant legal sources where appropriate.
+- Display the actual answer returned by the backend.
+- Show loading, success, empty-result, and error states accurately.
+- Preserve conversation context where supported.
+- Handle invalid input and network failure properly.
+- Never display a fabricated answer as a successful AI response.
+
+Remove hardcoded chatbot responses and mock production chat behavior.
+
+A successful request must represent a real successful backend operation.
+
+----------------------------------------
+B. Legal Research
+----------------------------------------
+
+Verify that legal research performs real retrieval from the existing legal repository.
+
+Inspect:
+
+- Search query processing.
+- Document indexing.
+- Keyword retrieval.
+- Vector retrieval, if implemented.
+- Relevance ranking.
+- Source metadata.
+- Search-result links.
+- Source opening.
+- Pagination.
+- Language handling.
+- Empty results and error handling.
+
+Do not show fake search results.
+
+A search result must correspond to an actual retrieved legal document or clearly identified source.
+
+----------------------------------------
+C. Legal Document Management
+----------------------------------------
+
+Verify actual:
+
+- File selection.
+- Upload.
+- Storage location.
+- File metadata.
+- Download.
+- Preview.
+- Deletion authorization.
+- Institution-level access restrictions.
+- Document ownership.
+- Audit logging.
+
+Use the existing Firebase Storage and Firestore architecture.
+
+Do not store large legal documents as base64 in Firestore when the existing Storage architecture supports file storage.
+
+Never show "Upload successful" unless the actual upload completed.
+
+Never show a file as available when it does not exist.
+
+----------------------------------------
+D. OCR and Document Analysis
+----------------------------------------
+
+Verify PDF, DOCX, and image processing.
+
+The system must:
+
+- Extract actual document text.
+- Identify page numbers where possible.
+- Preserve the relationship between extracted text and source pages.
+- Report unreadable or incomplete pages.
+- Report OCR uncertainty.
+- Avoid inventing missing text.
+- Avoid pretending that extraction succeeded when it failed.
+
+Any legal analysis must distinguish the original document's content from AI interpretation.
+
+----------------------------------------
+E. Audio and Witness Tools
+----------------------------------------
+
+If audio recording, uploading, transcription, or witness statement features exist, verify that they actually work.
+
+Check:
+
+- Microphone permission.
+- Recording state.
+- Pause and resume.
+- Audio file creation.
+- Upload.
+- Transcription.
+- Error reporting.
+- Authorization.
+- Secure storage.
+- Access logs.
+
+Do not fabricate a transcript or report a recording as saved when no valid file exists.
+
+Protect confidential witness and courtroom information.
+
+----------------------------------------
+F. Telegram Integration
+----------------------------------------
+
+Verify actual Telegram API integration, webhook configuration, authentication, document retrieval, and backend processing.
+
+Remove fake Telegram status messages and simulated results.
+
+Never expose bot tokens or bridge secrets in frontend code, logs, or chat responses.
+
+----------------------------------------
+G. Dashboard and User Interface
+----------------------------------------
+
+Verify each visible button, menu, tab, card, counter, graph, notification, and form.
+
+A visible control must perform its advertised action.
+
+Remove or repair:
+
+- Buttons with empty handlers.
+- Fake statistics.
+- Placeholder charts.
+- Fake notifications.
+- Dead menu items.
+- Broken navigation.
+- Misleading badges.
+- Forms that do not save data.
+- Features that display success without performing the operation.
+
+Do not invent replacement statistics.
+
+Display only real, available data.
+
+If a function cannot be implemented safely, remove its misleading interface or clearly label it unavailable.
+
+================================================================================
+6. LEGAL ANSWER ACCURACY — HIGHEST PRIORITY
+================================================================================
+
+This is a legal technology application. Accuracy and verifiability are mandatory.
+
+The AI must not invent:
+
+- Ethiopian laws.
+- Proclamations.
+- Regulations.
+- Articles or sub-articles.
+- Legal definitions.
+- Court decisions.
+- Cassation file numbers.
+- Court names.
+- Dates.
+- Volume numbers.
+- Holdings.
+- Page references.
+- Quotations.
+- Legal procedures.
+- Amendments or repeals.
+
+Do not treat the AI model's general knowledge as proof that a legal provision exists or remains in force.
+
+----------------------------------------
+A. Source hierarchy
+----------------------------------------
+
+Use the following source hierarchy according to actual availability and verification:
+
+1. Official Federal Ethiopian legal publications and Negarit Gazeta.
+2. Official Oromia regional legal publications and authorized government sources.
+3. Official court decisions and authorized court publications.
+4. Authenticated copies of legal documents uploaded into the existing repository.
+5. Other secondary sources only when clearly identified as secondary and independently verified where possible.
+
+Telegram posts, social media discussions, copied text, and unattributed documents must not automatically be treated as authoritative legal sources.
+
+If a secondary source contains a legal text, verify the underlying official source before presenting it as authoritative.
+
+----------------------------------------
+B. Mandatory legal citation verification
+----------------------------------------
+
+Before citing a provision, verify the available source metadata:
+
+- Full legal instrument name.
+- Proclamation or regulation number.
+- Year.
+- Article number.
+- Sub-article or paragraph.
+- Page number, where available.
+- Publication or source identity.
+- Amendment or repeal status, where verifiable.
+
+Before citing a court decision, verify:
+
+- Court name.
+- Case or cassation file number.
+- Decision date, if available.
+- Volume or collection number, if available.
+- Relevant page.
+- Actual holding or reasoning.
+
+Never invent missing metadata.
+
+If the exact source or page cannot be verified, disclose the limitation.
+
+----------------------------------------
+C. Legal Q&A response structure
+----------------------------------------
+
+For substantive legal questions, use this structure when the available evidence permits:
+
+1. Gaaffii ykn dhimma seeraa.
+2. Dhugaa fi odeeffannoo gaaffii keessatti kenname.
+3. Seera ykn murtii madda isaa irraa argame.
+4. Hiika fi xiinxala seeraa.
+5. Seera Federaalaa fi Oromiyaa gidduutti garaagarummaa jiru, yoo dhimmi ilaallatu.
+6. Bu'aa xiinxala irraa argamu.
+7. Madda fi wabiiwwan.
+8. Dhimmoota hin mirkanoofne ykn odeeffannoo dabalataa barbaachisu.
+
+Do not force this structure for simple questions where it is unnecessary.
+
+----------------------------------------
+D. Missing-source behavior
+----------------------------------------
+
+When no trustworthy legal source is found, do NOT guess.
+
+Respond clearly in the user's language, for example:
+
+"Deebii seeraa kana madda seeraa mirkanaa'e irraa mirkaneessuu hin dandeenye. Lakkoofsa keewwataa ykn murtii tokko tilmaamaan kennuun sirrii miti. Maaloo sanada seeraa ykn madda dabalataa dhiyeessi."
+
+You may explain general legal concepts, but clearly label them as general explanation rather than verified Ethiopian law.
+
+----------------------------------------
+E. Distinguish evidence from interpretation
+----------------------------------------
+
+Never present:
+
+- An AI inference as a statutory provision.
+- A summary as a direct quotation.
+- A search snippet as the complete law.
+- A draft as a published law.
+- An unverified case summary as an official judgment.
+
+Clearly separate source text, paraphrase, and legal reasoning.
+
+================================================================================
+7. MULTILINGUAL QUALITY
+================================================================================
+
+Preserve the existing multilingual application:
+
+- Afaan Oromoo.
+- Amharic.
+- English.
+
+Verify that:
+
+- Questions are correctly accepted in all three languages.
+- Responses use the selected language.
+- Legal terms are not incorrectly translated.
+- Legal citations remain unchanged during translation.
+- Article and case numbers are preserved.
+- The system does not mix languages unnecessarily.
+- Translation does not change the legal meaning.
+
+If the system cannot confidently translate a technical legal term, preserve the original term and explain it rather than inventing a misleading equivalent.
+
+================================================================================
+8. AI MODEL AND API INTEGRATION
+================================================================================
+
+Inspect the existing AI backend and actual configured provider integrations.
+
+Where already implemented and configured, verify:
+
+- OpenAI Responses API integration.
+- Gemini API integration.
+- Model selection.
+- Model fallback.
+- Timeouts.
+- Rate limits.
+- Error handling.
+- Output validation.
+- Retrieval grounding.
+- Token and usage limits.
+
+Do not claim that a provider is connected unless a real request succeeds.
+
+API keys and provider secrets must remain on the backend.
+
+Never put private API keys in:
+
+- Frontend JavaScript.
+- Vite-exposed environment variables.
+- Public configuration.
+- Browser storage.
+- GitHub.
+- Logs.
+- User-visible responses.
+
+Do not create fake fallback answers.
+
+A fallback provider must follow the same source-verification requirements. If the source evidence is missing, changing the model must not turn an unsupported legal answer into a supposedly verified answer.
+
+================================================================================
+9. DATA AND SECURITY PRESERVATION
+================================================================================
+
+Preserve:
+
+- Existing user accounts.
+- Existing institutions.
+- Existing legal documents.
+- Existing court records.
+- Existing audit logs.
+- Existing Firebase project.
+- Existing integrations.
+
+Do not use destructive database operations.
+
+Do not delete Firestore collections to remove fake features.
+
+Remove fake code and fake production UI without destroying real user data.
+
+Inspect authentication, Firestore Rules, Storage Rules, and backend authorization.
+
+Ensure that users cannot access another institution's confidential documents without authorization.
+
+Protect:
+
+- Judgments not intended for public access.
+- Evidence.
+- Witness statements.
+- Courtroom audio.
+- Personal information.
+- Administrative records.
+- Audit logs.
+
+Do not publish new Firebase Rules or deploy production changes without explicit approval.
+
+================================================================================
+10. TESTING AND VERIFICATION
+================================================================================
+
+For every repaired feature, run appropriate tests.
+
+Use the existing testing framework where possible.
+
+Test:
+
+- Actual chat requests.
+- Invalid chat requests.
+- Legal retrieval.
+- Missing legal sources.
+- Citation validation.
+- User authentication.
+- Role authorization.
+- Institution isolation.
+- File uploads.
+- File downloads.
+- OCR failure.
+- Audio failure.
+- Telegram failure.
+- API timeouts.
+- Model fallback.
+- Empty search results.
+- Network errors.
+- Multilingual output.
+- UI controls.
+- Dashboard data.
+
+Check for:
+
+- TypeScript errors.
+- Build errors.
+- Lint errors.
+- Runtime errors.
+- Broken imports.
+- Invalid API arguments.
+- Missing environment variables.
+- Unhandled exceptions.
+- Broken navigation.
+
+Do not claim tests passed unless they were actually executed.
+
+Do not replace a failed test with a hardcoded success result.
+
+================================================================================
+11. IMPLEMENTATION RULES
+================================================================================
+
+Follow this sequence:
+
+STEP 1 — Inspect
+
+Inspect the entire existing codebase and determine the actual application architecture.
+
+STEP 2 — Inventory
+
+Create a complete list of visible features and their underlying source files, backend endpoints, database dependencies, and external services.
+
+STEP 3 — Classify
+
+Mark every feature KEEP, REPAIR, REMOVE, or BLOCKED.
+
+STEP 4 — Prioritize
+
+Prioritize:
+
+1. Fabricated legal answers and citations.
+2. Fake AI chat behavior.
+3. Security problems.
+4. Broken legal retrieval.
+5. Fake document and audio operations.
+6. Nonfunctional buttons and UI controls.
+7. Misleading dashboard information.
+8. Unused and duplicate features.
+
+STEP 5 — Repair or Remove
+
+Fix real features where possible.
+
+Remove confirmed fake or unnecessary production functionality.
+
+Preserve real functionality and real data.
+
+STEP 6 — Test
+
+Run the available tests and verify the actual behavior.
+
+STEP 7 — Review
+
+Review all changes for regressions, security issues, and data-loss risks.
+
+STEP 8 — Report
+
+Provide evidence of what was actually fixed, removed, tested, or blocked.
+
+Do not stop after producing a checklist. Perform the safe changes that the environment permits.
+
+If you cannot edit or test a particular part because of missing access or tools, state exactly why.
+
+================================================================================
+12. REQUIRED FINAL DELIVERABLES
+================================================================================
+
+Produce these files in the existing project where the environment supports file creation:
+
+1. "SEERAAI_FEATURE_AUDIT.md"
+
+   - Complete feature inventory.
+   - KEEP / REPAIR / REMOVE / BLOCKED classification.
+   - Evidence and source references.
+
+2. "SEERAAI_FAKE_FEATURES_REMOVED.md"
+
+   - Confirmed fake functionality removed.
+   - Files and components affected.
+   - Confirmation that real user data was preserved.
+
+3. "SEERAAI_FUNCTIONALITY_REPAIR_REPORT.md"
+
+   - Actual repairs.
+   - Backend and frontend changes.
+   - API integration results.
+
+4. "SEERAAI_LEGAL_ACCURACY_AUDIT.md"
+
+   - Source verification.
+   - Citation validation.
+   - Legal retrieval results.
+   - Unsupported-answer prevention.
+   - Multilingual quality.
+
+5. "SEERAAI_TEST_REPORT.md"
+
+   - Tests actually executed.
+   - Passed.
+   - Failed.
+   - Blocked.
+   - Not tested.
+
+6. "SEERAAI_RELEASE_READINESS.md"
+
+   - Outstanding risks.
+   - Required human approval.
+   - Deployment readiness.
+
+Also provide a concise summary of modified files and Git diff.
+
+If the environment cannot create these files, provide their complete contents in the final response rather than claiming they exist.
+
+================================================================================
+13. FINAL ACCEPTANCE CRITERIA
+================================================================================
+
+The application must not be declared complete unless the following are verified:
+
+- No confirmed fake feature remains exposed as genuine functionality.
+- Nonfunctional buttons are repaired or safely removed.
+- Fake success notifications are eliminated.
+- Fake legal answers and fabricated citations are prevented.
+- Legal responses are grounded in retrievable, identifiable sources.
+- Missing-source cases are handled honestly.
+- Real legal documents and existing user data are preserved.
+- Real AI provider integrations are verified.
+- Multilingual functionality is tested.
+- Security and institution-level access are reviewed.
+- Build and relevant tests are executed successfully.
+- Remaining limitations are documented.
+
+Select exactly one final status:
+
+READY FOR HUMAN RELEASE APPROVAL
+
+or
+
+NOT READY — FUNCTIONALITY OR ACCURACY ISSUES REMAIN
+
+or
+
+BLOCKED — REQUIRED ACCESS OR TESTING UNAVAILABLE
+
+Never say "100% complete", "fully secure", or "all features working" without evidence.
+
+================================================================================
+14. START NOW
+================================================================================
+
+Start by inspecting the existing SEERAAI PRO project.
+
+Do not create a replacement project.
+
+Do not provide only general advice.
+
+Identify the actual fake and broken features, repair what can safely be repaired, remove what is genuinely fake, run available tests, and provide the evidence-based final report.
+
+The ultimate objective is a real, reliable, secure, multilingual Ethiopian legal AI application — not an application that merely looks complete.

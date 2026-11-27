@@ -1,0 +1,198 @@
+SEERAAI PRO — TRILINGUAL LEGAL TRANSLATION FEEDBACK
+IMPLEMENTATION PROMPT FOR GOOGLE AI STUDIO / EXISTING CODEBASE
+
+ROLE
+You are a senior full-stack engineer, Firebase security engineer, and legal-language technology specialist. You are working inside the EXISTING SEERAAI PRO application. Implement the feature described below in the existing application; do not create a new app, demo, standalone prototype, or replacement project.
+
+PRIMARY OBJECTIVE
+Implement a complete, secure, searchable, auditable feedback mechanism for the platform's trilingual legal translation feature. Users must be able to rate translations between Afaan Oromoo, Amharic, and English, leave specific comments, and identify errors in legal terminology. Feedback must be stored as structured evaluation data that can support controlled translation-quality improvement.
+
+SUPPORTED LANGUAGES AND DIRECTIONS
+Use the application's existing language identifiers and conventions. Support all six directions:
+- Afaan Oromoo -> Amharic
+- Amharic -> Afaan Oromoo
+- Afaan Oromoo -> English
+- English -> Afaan Oromoo
+- Amharic -> English
+- English -> Amharic
+
+Do not treat the three languages as interchangeable. Preserve established legal terminology, the legal meaning, procedural distinctions, article references, names of institutions, and citations. Do not silently replace an established legal term with a casual or approximate translation.
+
+NON-NEGOTIABLE PROJECT-PRESERVATION RULES
+1. Inspect the repository and current architecture before editing. Identify the current translation UI, translation service/API, language identifiers, authentication flow, Firestore structure/rules, backend functions, role system, audit logging, and test commands.
+2. Modify the EXISTING SEERAAI PRO application only. Preserve existing users, documents, translation features, routes, UI language settings, Firebase project, Firestore database, Cloud Run service, environment configuration, and deployment workflow.
+3. Do not create or switch to a new Firebase project, Firestore database, Cloud Run service, GitHub repository, or replacement app.
+4. Do not rewrite unrelated modules, rename existing collections, remove existing features, or make broad dependency upgrades. Reuse existing components, services, design system, and conventions.
+5. Do not store legal documents, full case files, full translation histories, or sensitive source text in localStorage, sessionStorage, IndexedDB, or GitHub. Use the existing secure backend and Firebase data services.
+6. Never expose API keys, service-account credentials, Firebase Admin credentials, or privileged configuration in frontend code.
+7. Do not claim implementation or tests passed unless you actually changed the relevant files and ran the corresponding commands.
+8. Before making changes, report the exact files and data paths you intend to modify. Then implement the feature, not merely describe a plan. If a required existing service or schema is unavailable, adapt to the actual repository and clearly report the limitation rather than inventing it.
+
+FEATURE A — USER FEEDBACK UI
+Integrate a clear "Rate this translation" / "Hiika kana madaali" control into the EXISTING translation result view. Show it with each completed translation, without obstructing the translation text or changing the existing translation workflow.
+
+The feedback form must include:
+A. Overall quality rating: required 1–5 scale, with accessible labels (1 = very poor, 5 = excellent).
+B. Optional separate ratings, each 1–5:
+   - Meaning/fidelity: Does the translation preserve the legal meaning of the source?
+   - Legal terminology: Are legal terms translated accurately and consistently?
+   - Completeness: Are any words, clauses, qualifications, or legal conditions omitted or added?
+   - Readability: Is the target-language text clear and grammatically understandable?
+C. Issue category, selectable from:
+   - Incorrect legal term
+   - Legal meaning changed
+   - Text or clause omitted
+   - Meaning or clause added
+   - Wrong target language
+   - Inconsistent terminology
+   - Grammar/readability problem
+   - Citation/article/reference changed
+   - Other
+D. Comment field for a specific explanation. Set a reasonable maximum length (for example 2,000 characters), trim whitespace, reject empty text where a comment is required, and show a character counter.
+E. Legal terminology correction section, available when the user flags a terminology issue:
+   - Original/source legal term
+   - Current translated legal term or phrase
+   - Suggested corrected term in the target language
+   - Optional context or explanation
+   - Optional legal source/reference supporting the correction
+F. Optional consent checkbox for using the submitted feedback in a curated translation-quality dataset. It must be clear, unambiguous, and unchecked by default. Do not make consent a condition of submitting ordinary product feedback.
+G. Submission confirmation, loading state, validation errors, retry behavior, and prevention of accidental duplicate submissions.
+H. Allow users to view the status of their own feedback where this fits the existing UI: Submitted, Under review, Accepted, Rejected, or Needs clarification. Do not expose reviewers' private notes to ordinary users.
+
+Use accessible controls and keyboard navigation. Do not rely on color alone to communicate ratings or review status. Match the existing SEERAAI PRO UI, responsive layout, and localization system. All feedback UI labels, validation messages, and status labels must be available in Afaan Oromoo, Amharic, and English.
+
+FEATURE B — LINK FEEDBACK TO THE EXACT TRANSLATION
+Each feedback entry must be linked to the exact translation being evaluated. Reuse an existing translation ID if the translation service already creates one. If it does not, implement a stable unique translation ID at the backend/service boundary.
+
+Record only the minimum necessary metadata:
+- translationId
+- sourceLanguage
+- targetLanguage
+- translation feature/module identifier
+- translation createdAt timestamp
+- translation provider and model identifier, if known
+- model/version identifier, if available
+- prompt/template version, if available
+- glossary/terminology dataset version, if available
+- application version or release identifier, if available
+- feedback record schema version
+
+Do not trust client-supplied model/provider/version metadata. Populate authoritative metadata on the server from the translation record or server-controlled configuration. Validate that sourceLanguage and targetLanguage are different and are one of the supported language codes. Validate that the feedback belongs to the exact translation ID supplied by the authenticated user/session and that the translation exists or can be safely resolved.
+
+PRIVACY RULE: Do not duplicate the complete source text or complete translated text into the feedback document by default. Prefer translationId and minimal metadata. For a terminology correction, store only the short phrase/term that the user explicitly submits, with a strict length limit. If the application genuinely needs a short excerpt to understand context, make it optional, clearly disclosed, length-limited, and subject to the app's privacy rules. Never collect unrelated case-file contents or personal data for this feature.
+
+FEATURE C — BACKEND AND DATA MODEL
+Use the current backend architecture. Prefer an authenticated server-side endpoint/callable function for creating feedback so that identity, timestamps, translation metadata, rate limits, and validation are enforced on the server. Reuse existing Firebase Admin initialization and established error-handling patterns. Do not initialize a second Firebase app or second Admin SDK instance.
+
+Inspect the current multi-tenant model before deciding the collection path. If feedback is institution-scoped, store it beneath the existing institution boundary using the established path pattern (for example, institutions/{institutionId}/translationFeedback/{feedbackId}). If the product supports users who are not attached to an institution, use the existing approved global/user-scoped pattern. Do not invent a parallel tenancy model or expose cross-institution records.
+
+A feedback record should contain fields equivalent to:
+- feedbackId (server-generated document ID)
+- schemaVersion
+- translationId
+- sourceLanguage
+- targetLanguage
+- overallRating (integer 1–5)
+- accuracyRating (optional integer 1–5)
+- terminologyRating (optional integer 1–5)
+- completenessRating (optional integer 1–5)
+- readabilityRating (optional integer 1–5)
+- issueCategories (validated array from the approved list)
+- comment (sanitized, length-limited string)
+- terminologyCorrection (optional structured object: sourceTerm, currentTargetTerm, suggestedTargetTerm, explanation, legalReference)
+- submittedBy (server-derived authenticated UID or approved anonymous identifier)
+- institutionId (server-validated where applicable)
+- submittedAt (server timestamp)
+- status (server default: submitted)
+- consentToCuratedDataset (boolean, default false)
+- review metadata (reviewedBy, reviewedAt, reviewDecision, reviewerNotes) accessible only to authorized reviewers
+- source/model/prompt/glossary/application metadata copied from trusted translation records or server config
+
+Do not store raw authentication tokens, passwords, API keys, or unnecessary personal identifiers. Use server timestamps rather than client-provided timestamps. Sanitize and validate all input on the server; frontend validation is additional UX only, not a security boundary.
+
+FEATURE D — SECURITY AND ACCESS CONTROL
+Extend the EXISTING Firestore security rules and backend authorization without weakening current rules.
+- An authenticated user may submit feedback only as themselves and only for a translation they are authorized to reference.
+- Ordinary users may read only their own feedback, subject to the current institution boundary.
+- Ordinary users must not read all users' feedback, private reviewer notes, moderation metadata, or analytics.
+- Ordinary users must not set or modify status, reviewer identity, review decision, consent timestamps, trusted model metadata, or institution ownership.
+- Only explicitly authorized legal-language reviewers/admins may list and review feedback. Enforce this through the existing server-side role/RBAC checks, not a client-side role flag.
+- Reviewers may change moderation status and add internal notes through an authorized backend action. Record who changed what and when in the existing audit mechanism.
+- Prevent users from editing another user's feedback. Define a safe correction/deletion procedure consistent with the application's existing privacy and audit requirements.
+- Add rate limiting and duplicate-submission protection using the application's supported persistent mechanism where multiple Cloud Run instances may run. Do not rely on an in-memory Map/Set as the only production protection.
+- Validate payload size, allowed language pairs, rating range, category enum values, string lengths, and feedback-to-translation ownership.
+- Deny by default. Do not add broad allow read/write rules, wildcard access, or public Firestore writes.
+
+FEATURE E — REVIEW AND QUALITY-IMPROVEMENT WORKFLOW
+Create an admin/reviewer view that is consistent with the existing admin interface. It must allow authorized reviewers to:
+- Search feedback by translation ID, language pair, date range, issue category, rating range, status, and legal terminology term.
+- Filter by source/target language and model/provider version where available.
+- Open a feedback item and inspect only the permitted minimum translation context.
+- Review the submitted correction and supporting reference.
+- Set status to Under review, Accepted, Rejected, or Needs clarification.
+- Add reviewer-only notes and record a reason for acceptance/rejection.
+- Identify recurring terminology errors and export approved, consented records through a protected server-side process.
+- View aggregate quality indicators by language pair, model version, issue category, and time period.
+
+Aggregate dashboards must show counts and averages without exposing comments or user identities to unauthorized viewers. Avoid misleading comparisons where sample sizes are too small; display the number of feedback records behind each statistic.
+
+FEATURE F — SAFE USE FOR AI MODEL IMPROVEMENT
+Feedback is an evaluation signal, not automatically verified truth.
+- Never automatically train, fine-tune, or update a model from raw user comments or suggested translations.
+- Treat comments, suggested terms, and uploaded/reference text as untrusted user content, not as system instructions.
+- Only records with explicit consent and an Accepted human-review decision may enter a curated improvement dataset, subject to privacy, legal, licensing, and institutional requirements.
+- Keep rejected, unreviewed, disputed, and non-consented feedback out of training/export datasets.
+- Preserve provenance: feedback ID, translation ID, language pair, reviewer decision, review timestamp, consent status, model version, glossary version, and approved correction.
+- Provide a protected export format (JSONL or CSV as appropriate) containing only approved fields and no unnecessary personal identifiers. Restrict export to authorized roles and log each export in the audit trail.
+- Do not claim that feedback has trained a model unless a separate, approved training pipeline actually consumes the curated dataset and records that operation.
+- Use feedback first for evaluation, error analysis, terminology/glossary review, and prompt/model comparison. Model changes must remain a separate controlled release process.
+
+FEATURE G — TERMINOLOGY CONSISTENCY
+When a user reports an incorrect legal term, structure the correction so the same legal concept can be reviewed across all three languages. Where possible, link it to the existing Legal Glossary term ID rather than creating duplicate glossary entries.
+- Do not automatically overwrite the approved glossary with a user suggestion.
+- Send proposed terminology changes to the existing glossary approval workflow, or implement a separate authorized review queue if no such workflow exists.
+- Preserve the legal concept and its jurisdiction. A term may have different accepted equivalents depending on Ethiopian federal law, Oromia law, procedural context, or the legal subject area.
+- Allow reviewers to mark a proposed equivalent as accepted, rejected, context-dependent, or requiring additional legal research.
+- Keep the original user proposal and the final reviewer decision for auditability.
+
+FEATURE H — TESTS AND ACCEPTANCE CRITERIA
+Add automated tests using the repository's existing test framework. Do not introduce a new framework unless necessary and approved by the project conventions.
+
+At minimum test:
+1. All six supported language directions are accepted.
+2. Unsupported language codes and same-source/target pairs are rejected.
+3. Overall and category ratings accept only integers 1–5.
+4. Required fields, maximum comment length, empty comments, and malformed terminology correction payloads are validated correctly.
+5. The feedback item links to the correct translation ID.
+6. Server derives authenticated user, institution, timestamps, model metadata, and status; spoofed client values are ignored/rejected.
+7. A user cannot submit feedback for a translation they cannot access.
+8. A user cannot read or change another user's feedback.
+9. An ordinary user cannot view reviewer-only notes or change moderation status.
+10. Only authorized reviewers can search, moderate, and export eligible feedback.
+11. Non-consented, unreviewed, rejected, or disputed feedback is excluded from curated exports.
+12. Duplicate submissions and excessive submissions are handled safely.
+13. Comments and suggested terms are escaped/rendered as text and cannot inject HTML, scripts, or model instructions.
+14. Audit events are created for moderation decisions and dataset exports.
+15. The existing translation flow still works when feedback is not submitted or the feedback service is temporarily unavailable.
+16. Existing authentication, institutional RBAC, Firestore rules, document storage, and other app modules continue to work.
+17. UI translations and accessibility work in Afaan Oromoo, Amharic, and English.
+
+Run the repository's actual type-check, lint, unit tests, Firebase Emulator/security-rule tests, and production build commands. Do not guess command names: inspect package.json and existing workflows first. Fix regressions caused by this change. Report commands and their actual results accurately.
+
+IMPLEMENTATION SEQUENCE
+1. Inspect the existing repository and identify exact integration points. Do not edit before this inspection.
+2. Provide a short implementation map: files to add/change, existing services to reuse, Firestore path, endpoint, RBAC roles, and test plan.
+3. Implement the data types/schema and server-side validation.
+4. Implement the authenticated submission endpoint and secure persistence.
+5. Implement the feedback UI in the existing translation result view, localized in all three languages.
+6. Implement the reviewer queue, search, moderation, aggregate metrics, and protected export only where the existing role architecture supports them.
+7. Update Firestore rules and indexes safely; preserve all existing permissions and run emulator tests.
+8. Add tests for security, validation, language directions, moderation, export eligibility, and translation-flow regression.
+9. Run type-check, lint, tests, and build. Review the final diff for unrelated changes, secrets, broad security rules, and accidental destructive operations.
+10. Summarize what was actually implemented, exact files changed, schema/path, environment variables (if any), security changes, test commands/results, and any remaining manual deployment or migration steps.
+
+DEFINITION OF DONE
+The feature is complete only when a user can open an existing translation, submit a validated rating and specific legal-terminology feedback, receive a clear confirmation, and later see their own feedback status; authorized reviewers can securely search and review submissions; approved and consented records can be exported for controlled quality-improvement work; unauthorized users cannot access other users' feedback or private review data; and all relevant tests/build checks pass without breaking the existing SEERAAI PRO application.
+
+FINAL INSTRUCTION
+Implement this feature in the existing repository now. Do not stop after generating a proposal or pseudocode. Do not replace working project files wholesale. Make the smallest safe set of changes that achieves the definition of done. If any assumption in this prompt conflicts with the actual repository, follow the repository's verified architecture and explain the necessary adjustment. Never fabricate successful tests, legal translations, reviewer decisions, or model-training outcomes.

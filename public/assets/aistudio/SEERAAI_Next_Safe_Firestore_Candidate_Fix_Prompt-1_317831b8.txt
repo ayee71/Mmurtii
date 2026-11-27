@@ -1,0 +1,69 @@
+SEERAAI PRO — PHASE 8B FIRESTORE EMULATOR FAILURE: SAFE CANDIDATE-ONLY REMEDIATION
+
+IMPORTANT: Work only in the existing candidate workspace/branch ci/rules-emulator-tests. Do not touch production files or deploy anything. First inspect the exact current file contents and record SHA-256 hashes before editing.
+
+A. CONFIRMED FAILURE EVIDENCE
+The latest GitHub Actions run reports Firestore Rules Emulator Suite 15/17 passed. Test [7] and Test [10] failed. TypeScript/build, emulator startup, dependency installation, and the hash-unchanged step passed. The Storage suite did not run because package.json chains it after Firestore with `&&`.
+
+Test [7]: tests/firestore.rules.test.ts creates `court_documents/doc_a2` without `dataUrl`. The candidate Firestore rule directly accesses `incoming().dataUrl`, which errors if the optional key is absent. Firebase's documented safe pattern for optional map fields is `map.get('field', defaultValue)`.
+
+Test [10]: tests/firestore.rules.test.ts authenticates `ctxExpertA()` with `courtRole: 'legal_expert'` and `institutionId: INST_A`, then expects a write to the global collection `legislation_repository/proc_new`. The current candidate rule for that collection is `allow write: if isAdmin();`. The existing helper `isLegalRepositoryManager()` includes verified admins, `legalContentManager == true`, and court roles `judge`, `legal_expert`, and `court_admin`.
+
+Additional issue visible in the same candidate rules: `isAdmin()` directly reads optional custom claims `request.auth.token.admin` and `request.auth.token.role`; `effectiveCourtRole()` directly reads optional `courtRole` and `role`; and `isLegalRepositoryManager()` directly reads optional `legalContentManager`. Missing claims have already appeared in emulator evaluation errors (for example, `Property admin is undefined`). Use safe map `.get(key, default)` access for optional custom claims where appropriate, without changing the meaning of a present claim.
+
+B. TASK 1 — SAFE RULE DEFECT FIX (MAY APPLY IN CANDIDATE ONLY)
+1. In the candidate rules, replace direct access to optional `dataUrl` in the affected court document create/update conditions with a safe map access equivalent to `incoming().get('dataUrl', null)`.
+2. Inspect BOTH paths: `/court_documents/{docId}` and `/institutions/{institutionId}/courtDocuments/{docId}`. Change only the optional-field access; preserve the existing 65536-byte maximum, type checks, institution checks, role checks, and every other restriction.
+3. Make custom claim reads safe using map defaults (for example, admin defaults false, role/courtRole defaults empty string, legalContentManager defaults false). Preserve all existing authorization semantics for claims that are present. Do not add any new role or privilege as part of this hardening.
+
+C. TASK 2 — LEGAL REPOSITORY AUTHORIZATION: DO NOT WIDEN WITHOUT POLICY APPROVAL
+The target `legislation_repository` is a top-level/global collection with public reads. Changing its write rule to the existing broad `isLegalRepositoryManager()` would grant global write access to verified judges and court_admins as well as legal_experts and `legalContentManager` users. This is a meaningful privilege expansion across institutions.
+Do NOT apply that expansion automatically.
+Instead:
+1. Show the exact current helper and collection rule.
+2. Explain the privilege expansion if the collection rule is changed to `isLegalRepositoryManager()`.
+3. Propose two explicit choices for human approval:
+   Option A: only verified users with the explicit `legalContentManager` custom claim (plus existing admins) can write to the global repository;
+   Option B: verified `legal_expert` users can write, but include an explicit institution-scope design and matching positive/negative tests before implementation. Do not silently assume a global legal_expert grant.
+4. Keep Test [10] unresolved/marked policy-blocked until the human selects an option. Do not weaken or rewrite the test merely to obtain a green build.
+
+D. TASK 3 — RUN BOTH TEST SUITES AND REPORT SEPARATELY
+Inspect the current package.json and rules-test workflow. Ensure that a Firestore test failure does not prevent the Storage suite from running in the same isolated emulator job. Record each suite's independent exit code and output, then fail the overall job if either suite fails. Keep emulator target `demo-seeraai-test`, and do not call Firebase production project `leafy-rush-xvd6f`.
+Do not edit application dependencies or package-lock.json unless a demonstrated need exists. Prefer the smallest reproducible solution and show the exact diff first.
+
+E. REQUIRED TESTS
+For Firestore candidate rules:
+- Test [7]: judge create with no `dataUrl` succeeds.
+- `dataUrl: null` behaves safely and consistently.
+- A string at the existing 65536-byte limit follows the existing policy.
+- 65537 bytes is denied.
+- A non-string dataUrl is denied.
+- Missing optional custom claims do not cause evaluation errors for normal non-admin user/staff test contexts.
+- Preserve all existing denials: anonymous, unverified, phone-authenticated, cross-institution, impersonation, role escalation, audit-log mutation, and admin-only behavior.
+For Storage:
+- Run the entire existing Storage rules suite independently and report each assertion.
+
+F. SCOPE / SAFETY GUARDRAILS
+Allowed candidate file changes may include:
+- `firestore.rules.phase8b5.3.integrated.candidate`
+- `package.json` and/or a narrowly scoped test runner/workflow change needed to run both suites
+- `tests/firestore.rules.test.ts` only for new regression assertions, not to weaken existing assertions
+- `tests/storage.rules.test.ts` only if an actual test defect is demonstrated
+
+Forbidden:
+- Do not edit `firestore.rules`, `storage.rules`, or `firebase.json` (production files).
+- Do not deploy Firebase rules or Hosting, and do not run Cloud Run releases.
+- Do not commit, push, merge, create/delete branches, or sync to `main`.
+- Do not change GitHub Secrets or expose secret values.
+- Do not remove security tests, convert failing positive assertions into weaker checks, or suppress failure exit codes.
+
+G. DELIVERABLE
+Before applying any changes, display:
+1. Current branch and repository identity, if available; otherwise state that they cannot be verified.
+2. SHA-256 hashes of the candidate and test/workflow files before edits.
+3. Exact proposed unified diff.
+4. A clear separate decision request for the global `legislation_repository` write policy.
+
+Apply only Task 1 and the independent-suite runner improvement after showing the diff. Do not apply Task 2 authorization expansion until explicit human approval. Then run targeted Firestore tests and the full Storage suite, report PASS/FAIL/BLOCKED per suite, verify production-file hashes are unchanged, and provide post-change hashes and changed-file list.
+
+If any command fails, stop and report the complete error. Never claim PASS without actual execution. No push, merge, sync, or deployment.

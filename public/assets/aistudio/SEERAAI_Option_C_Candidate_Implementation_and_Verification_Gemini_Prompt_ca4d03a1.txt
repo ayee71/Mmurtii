@@ -1,0 +1,274 @@
+SEERAAI PRO — OPTION C CANDIDATE IMPLEMENTATION
+FIRESTORE + STORAGE RULES + CI HARDENING
+IMPLEMENT CANDIDATE FILES ONLY; NEVER DEPLOY OR PUSH
+
+USER-APPROVED POLICY
+The user explicitly selected Option C:
+- A verified institutional `legal_expert` may CREATE and UPDATE records in the global `legislation_repository`.
+- A `legal_expert` may NOT DELETE shared legislation records.
+- `isAdmin()` retains full repository authority, including delete.
+- A verified user with `legalContentManager == true` is also allowed to CREATE/UPDATE the global repository.
+- No new admin/superadmin power is granted to `legal_expert`.
+- Do not grant repository write access via the broad `isLegalRepositoryManager()` helper, because that helper includes `judge` and `court_admin`.
+- Preserve all existing court-document, court-case, user-management, audit-log, guest, and cross-institution restrictions.
+- Keep `isLegalRepositoryManager()` existing authorization scope on telegram_* paths unchanged in this task.
+
+IMPORTANT EXISTING BACKEND CLAIM BEHAVIOR
+The prior audit reports `server-app.ts` around line 373 automatically provisions `legalContentManager: true` for `judge` and `court_admin` when `/api/admin/set-court-claims` assigns those roles.
+Do NOT modify `server-app.ts` in this implementation phase.
+Do NOT conceal this consequence: under the approved policy, a verified judge/court_admin account that actually receives `legalContentManager: true` from this endpoint qualifies through the independent legalContentManager claim branch and can create/update global legislation_repository entries. A judge/court_admin account WITHOUT that claim is denied by the role-specific branch.
+Add tests for both cases:
+- judge/court_admin without legalContentManager claim: denied
+- verified identity with legalContentManager == true: allowed, regardless of courtRole, as that claim is an explicit repository-management permission.
+In the final report, prominently disclose this existing claim-provisioning implication and recommend a separate human policy decision if the user does not intend it. Do not silently alter backend provisioning.
+
+IMPLEMENTATION AUTHORIZATION
+The user said to continue and finish the candidate-only work based on the approved Option C plan. Implement the changes below only after the baseline checks pass. If any baseline file hash differs, if a target file is missing, if the current contents do not match the expected branch candidate, or if any ambiguity makes a permission broader than the policy, STOP WITHOUT EDITING and report the exact discrepancy.
+
+EXPECTED BASELINE HASHES BEFORE EDITS
+Production files (MUST NEVER CHANGE):
+- firestore.rules: 0f8ded650740718c936cadbbad2b350a1cba33adad746bc956785f510ef9299e
+- storage.rules: 48fb065d563e644510f6cd0a2627d675a8a8e7d9ed79bf210ffcaf3706d7924d
+- firebase.json: 834885b0b060720be404906d561efe73bde0ef64e23f6388e44c1ca45846828c
+
+Candidate / test / config / workflow files:
+- firestore.rules.phase8b5.3.integrated.candidate: 2e7b9fce5bf6a2f4cbf6aa49b2bdf1d3cf126dd89e82b01f5a56ac03309f5a1b
+- storage.rules.phase8b5.4.integrated.candidate: 4c0b8aaac6c1f22dc4ead7656d16d2db961b300cca4c10bacdb889fcb97509cc
+- firebase.emulator.test.json: b7b1596b913cfbded64ec367fb8297aa45fc405e6303cd7859ba0e1515a690ec
+- package.json: 2977cf5c54d78e00457eb47da7cc6b1a3c19bd1b2a6f5a367a7965cc48aee459
+- .github/workflows/rules-test.yml: 3167022ed50001b1b788354b55f425df9505a4abf1eecef8dac181dc9830d567
+- tests/firestore.rules.test.ts: 0002d86b49855d367fec007a7310870650d7cfd7e1070c2ab83f91891b9a45cb
+- tests/storage.rules.test.ts: 296146ed33311aeb15eeeb4ad7b016028887b68d321d93f0ee9a3f5e0faf57f4
+
+WORKSPACE / GIT SAFETY
+1. First report current working directory and whether `.git` metadata exists.
+2. The prior audit found `/app/applet` had no `.git` metadata. If still true, say Git branch/remote cannot be verified. Do not fabricate a branch name or commit.
+3. Do not use GitHub/AI Studio Sync. The previous Sync target was `main`; pushing to `main` can trigger Firebase production Hosting deployment. The user manually disabled that deployment workflow. Do not re-enable it.
+4. Do not run `git add`, `git commit`, `git push`, `git merge`, branch creation, PR creation, or any GitHub publish/sync action.
+5. Do not perform Firebase deploy, Hosting publish, Cloud Run deploy, or production rule publication.
+6. Use only emulator project `demo-seeraai-test`. Never invoke live project `leafy-rush-xvd6f`.
+
+STRICT PRODUCTION FILE BOUNDARY
+Never edit, format, rename, delete, or regenerate:
+- `firestore.rules`
+- `storage.rules`
+- `firebase.json`
+
+Take their SHA-256 hashes before work and after all edits/tests. If any differs, STOP immediately and report. Never restore/rewrite production files automatically; ask the user.
+
+CANDIDATE FILES ALLOWED TO MODIFY
+1. `firestore.rules.phase8b5.3.integrated.candidate`
+2. `storage.rules.phase8b5.4.integrated.candidate`
+3. `tests/firestore.rules.test.ts`
+4. `tests/storage.rules.test.ts` (only if required for claim safety/boundary coverage)
+5. `package.json`
+6. `.github/workflows/rules-test.yml`
+7. New file `scripts/run-rules-tests.mjs` (only if absent; robust local aggregator for both suites)
+No other file may be changed. If a fix requires `server-app.ts`, application components, lockfile, production config or any unlisted file, STOP and report instead of expanding scope.
+
+PHASE 0 — BASELINE INSPECTION
+- Verify all expected baseline hashes above.
+- Inspect the exact current candidate rules, tests, package scripts, emulator config, and workflow.
+- Confirm the emulator config points to candidate rules and `demo-seeraai-test`.
+- Check whether `scripts/run-rules-tests.mjs` exists; if it exists, inspect and preserve or repair it rather than overwrite blindly.
+- Search both candidate rules files for remaining direct optional custom-claim reads, including nested `firebase.sign_in_provider`.
+- Confirm test contexts for anonymous, phone, unverified, verified ordinary, judge, legal_expert, court_admin, admin, and legalContentManager.
+- If any expected hash mismatch or file discrepancy appears, DO NOT EDIT; provide a discrepancy report.
+
+PHASE 1 — FIRESTORE CLAIM SAFETY (CANDIDATE FILE ONLY)
+In `firestore.rules.phase8b5.3.integrated.candidate`, safely guard optional token properties without changing authorization semantics:
+- use `request.auth.token.get('email_verified', false)`
+- use `.get('admin', false)`, `.get('role', '')`, `.get('courtRole', '')`, `.get('legalContentManager', false)`, `.get('institutionId', '')`
+- safely access nested provider with a nested-map get, e.g. `request.auth.token.get(['firebase', 'sign_in_provider'], '')`, after confirming Rules syntax and expected token map types.
+- preserve the current distinction between anonymous, phone-only, email-verified, and other provider accounts. Missing provider must fail closed, not count as verified.
+- `isAdmin()` must remain verified-email gated if that is how current candidate defines it.
+- `effectiveCourtRole()` must return a safe string fallback when optional claim is missing or has wrong type.
+- `hasInstitution()` must require verified email, a string institution ID, non-empty, and <=128 characters.
+- Do NOT broaden `isLegalRepositoryManager()`; harden its optional claim reads while preserving exactly the existing role set and current telegram_* usage.
+- Check Firebase Security Rules function call depth and syntax. No recursive calls.
+
+PHASE 2 — OPTION C SHARED LEGISLATION POLICY
+The collection is global/shared and has no `institutionId` or jurisdiction-specific auth claim. Do not pretend `hasInstitution()` scopes a global document to one institution.
+Implement the approved semantics narrowly:
+- `allow read: if true` unchanged.
+- `allow create, update: if canManageLegislationRepository();`
+- `allow delete: if isAdmin();`
+- `canManageLegislationRepository()` must authorize:
+  a) verified Admin under the existing `isAdmin()` function; OR
+  b) email-verified identity with `legalContentManager == true`; OR
+  c) email-verified `legal_expert` with a valid non-empty institutionId claim.
+- It must NOT call the broad `isLegalRepositoryManager()` helper.
+- `judge` and `court_admin` without legalContentManager claim must be denied.
+- Any verified identity with legalContentManager == true is allowed by the explicit claim branch, including existing judge/court_admin accounts that the current backend provisions with this claim. Do not change `server-app.ts`; disclose this consequence.
+- `legal_expert` delete must fail. `legalContentManager` delete must fail. Admin delete may succeed.
+- Preserve no self-escalation, no admin/superadmin escalation, no institution boundary bypass, no unrelated access to court data, admin logs, user management, or system config.
+- Do not add fake `institutionId` to global legislation documents.
+
+PHASE 3 — OPTIONAL dataUrl AND UTF-8 BYTE LIMIT
+The product contract says max 65,536 bytes, not characters.
+Firebase Rules String.size() counts characters. Enforce bytes by using:
+`dataUrl.toUtf8().size() <= 65536`
+Verify the exact Rules API and compiler support before use.
+Implement a helper safe for missing and null values, preserving schema behavior:
+- absent field: accepted (dataUrl is optional)
+- explicit null: accepted only if consistent with the current optional schema
+- string: accepted only if UTF-8 byte count <=65536
+- non-string values (number, map, list): denied
+- malformed URL/base64 handling must remain as current schema requires; do not invent new URL format rules.
+Apply helper to both:
+- `match /court_documents/{docId}`
+- `match /institutions/{institutionId}/courtDocuments/{docId}`
+Preserve every other field and authorization condition.
+
+For `/court_documents/{docId}` create/update, validate institutionId exists, is a string, non-empty, and in allowed length before calling `canEditCasesIn(...)`. Use safe `.get()`; do not call helpers on an undefined field. On update, confirm existing institutionId and incoming institutionId remain equal. Use safe access for existing data where appropriate.
+Do not weaken `createdBy`, ownership, institution matching, document size, or any other conditions.
+
+Add regression tests to both relevant write paths:
+- dataUrl omitted: succeeds for authorized judge if the schema permits.
+- dataUrl explicit null: succeeds if consistent with schema.
+- ASCII string of exactly 65,536 bytes: succeeds.
+- ASCII string of 65,537 bytes: fails.
+- multibyte string with exactly 65,536 UTF-8 bytes (e.g. `'ሀ'.repeat(21845) + 'A'`): succeeds if otherwise valid.
+- multibyte string exceeding 65,536 bytes (e.g. `'ሀ'.repeat(21846)` = 65,538 bytes): fails.
+- number, object, and array dataUrl: fail.
+Ensure test payloads satisfy all unrelated schema/authorization requirements so failures specifically test dataUrl.
+
+PHASE 4 — STORAGE CLAIM SAFETY (CANDIDATE FILE ONLY)
+In `storage.rules.phase8b5.4.integrated.candidate`:
+- Inspect every direct optional claim access in `isSignedIn`, `isEmailVerified`, `isAdmin`, `effectiveCourtRole`, `belongsToInstitution`, `legalContentManager` checks, and any nested provider path.
+- Use safe `.get()` only where the current data type/schema permits, keeping the existing allow/deny policy unchanged.
+- Keep institution matching strict.
+- Do not modify `storage.rules` production.
+- Preserve current MIME allowlist, 50 MB limit, guest isolation, institution boundaries, and auditor restrictions.
+- Do not weaken any existing storage check.
+
+PHASE 5 — FIRESTORE AND STORAGE TESTS
+Update tests/firestore.rules.test.ts to assert:
+OPTION C positive:
+- verified institutional legal_expert creates and updates shared `legislation_repository`.
+- legal_expert cannot delete.
+- Admin can create/update/delete.
+- verified explicit legalContentManager claim can create/update and remains delete-denied.
+- judge/court_admin without legalContentManager claim cannot create/update.
+- verified judge/court_admin with legalContentManager claim are allowed by the explicit claim permission (reflecting current backend provisioning; disclose in report).
+- unverified legal_expert denied.
+- legal_expert missing institutionId denied.
+- ordinary, guest, phone-only, verified-no-role, and unauthenticated identities denied for writes.
+
+OPTION C containment:
+- legal_expert cannot write users/{uid} role/admin/superadmin/courtRole/institutionId claims.
+- cannot write admin_activity_logs, legalAuditLogs, court_users, system_config, or other admin collections unless an existing explicit policy says otherwise.
+- cannot write/read another institution's restricted courtDocuments/cases.
+- cannot use Option C to write `/court_documents` for an institution unless current court role policy independently grants it.
+- preserve guest isolation, audit-log immutability, admin escalation protection, and all currently passing tests.
+
+STORAGE:
+- Run and preserve all current storage test coverage.
+- Add missing-claim/claim-type regression tests only if the existing test contexts can prove safe behavior without altering intended permissions.
+- Verify allowed MIME types, boundary sizes, +1 byte rejection, unauth/guest/unverified/phone, and cross-institution access.
+- Do not change the actual Storage policy except safe optional-claim access; if a current Storage test reveals a policy defect, report it separately and stop before widening permissions.
+
+PHASE 6 — PACKAGE TEST RUNNER
+Avoid `&&` short-circuiting and avoid a fragile inline `node -e` script.
+In `package.json`, provide:
+- `test:firestore`: runs only `tests/firestore.rules.test.ts`
+- `test:storage`: runs only `tests/storage.rules.test.ts`
+- `test`: runs `node scripts/run-rules-tests.mjs`
+Add `scripts/run-rules-tests.mjs` if needed. It must:
+- invoke Firestore and Storage test commands sequentially, even if Firestore fails;
+- check each `spawnSync` result carefully;
+- treat `result.error`, `result.signal`, `result.status === null`, and every `result.status !== 0` as failure;
+- never convert a missing/null status to zero;
+- print each suite's name and exact exit status;
+- return nonzero if either suite failed.
+Do not change package-lock.json unless package scripts/dependencies actually require a lockfile change; for script-only package.json modifications, verify whether lockfile needs any change rather than assuming.
+
+PHASE 7 — GITHUB ACTIONS WORKFLOW
+Modify only `.github/workflows/rules-test.yml`:
+- Preserve existing triggers and path filters unless a verified problem requires correction.
+- Keep Node 22 and Java 17/21 according to the actual emulator/runner compatibility documented at execution time; inspect current configured Java version and emulator requirements. Do not blindly downgrade Java.
+- Preserve `firebase.emulator.test.json` and `--project demo-seeraai-test`.
+- Never reference live project `leafy-rush-xvd6f` in emulator test commands.
+- Give preflight/guard, install and build steps stable `id` values.
+- Firestore and Storage test steps must execute independently; a Firestore assertion failure must not prevent Storage tests.
+- Both suite steps must require successful guard, successful dependency installation, and successful tsc/build checks.
+- Storage test step may run after Firestore test failure, but must NOT run after failed checkout/setup, failed dependency install, failed candidate-integrity/isolation guard, failed tsc/build, or a cancelled workflow.
+- Use a condition conceptually equivalent to:
+  `${{ !cancelled() && steps.guard.outcome == 'success' && steps.install.outcome == 'success' && steps.build_check.outcome == 'success' }}`
+  Adjust IDs to actual workflow step IDs.
+- For future compatibility and simple isolation, invoke `firebase emulators:exec --only firestore,storage` for BOTH suites, but run only the respective test script inside each invocation:
+  `npm run test:firestore`
+  `npm run test:storage`
+  This avoids a future failure if Storage rules introduce Firestore cross-service lookups. The current audit found none, but keep this future-proof.
+- Capture evidence separately:
+  `evidence/firestore_output.txt`
+  `evidence/firestore_exit_code.txt`
+  `evidence/storage_output.txt`
+  `evidence/storage_exit_code.txt`
+- Use `set +e`, `set -o pipefail`, and capture `${PIPESTATUS[0]}` immediately after the `firebase emulators:exec | tee` pipeline. Also consider tee's status; if tee fails, record the suite as failed.
+- The captured test step should exit 0 only to allow the other suite and evidence upload to continue; the final fail gate must fail the job if either recorded code is nonzero or missing.
+- Evidence upload and after-hash checks should run after test failures but only after the isolation guard succeeded and the workflow was not cancelled; do not use unconditional `always()` for tests or upload when guard/setup failed.
+- Final fail gate must run after both suites if not cancelled and preflight/build succeeded; missing exit-code files are failures.
+- No deploy, no `firebase deploy`, no Hosting/Cloud Run publish step.
+
+PHASE 8 — VERIFICATION
+Run, in this order where supported:
+1. `npm ci --no-audit --no-fund` (only if local dependencies need installation; do not edit the lockfile unnecessarily)
+2. `npx tsc --noEmit`
+3. `npm run build`
+4. Firebase Rules compilation/emulator tests for Firestore and Storage using `demo-seeraai-test` only.
+5. Full independent Firestore and Storage suites.
+6. Verify all expected test names and assertion totals; report exact passed/failed/skipped counts.
+7. Verify candidate hashes and production-file hashes after all work.
+8. Check that only approved candidate/test/workflow/script files changed. No hidden changes, generated files, dist or build files may be included in the handoff unless they are required and explicitly approved; normally exclude build artifacts.
+If Java/emulators are unavailable in the current workspace, report BLOCKED and do not claim emulator tests passed. GitHub Actions can later run on Codespaces/remote branch after the user imports the handoff.
+
+PHASE 9 — HANDOFF (NO GIT SYNC)
+The previous audit found `/app/applet` may not contain `.git` metadata. If there is no Git repository:
+- apply and test only in the isolated AI Studio workspace;
+- do not claim changes were made to `ci/rules-emulator-tests`;
+- do not use AI Studio GitHub Sync (last known Sync target was `main`);
+- create a downloadable ZIP named `SEERAAI_OptionC_Candidate_Implementation_Handoff.zip` containing ONLY the approved changed candidate/test/workflow/script files, preserving their relative paths, plus:
+  - `IMPLEMENTATION_REPORT.txt`
+  - `SHA256SUMS.txt`
+  - `CHANGES.patch` (if a clean diff can be generated from saved pre-edit backups)
+- exclude all three production files, secrets, credentials, node_modules, dist, build, .env, and unrelated files.
+- report the exact file list, hashes, test results, and any blocked tests.
+If Git metadata exists and the branch is verifiably `ci/rules-emulator-tests`, still DO NOT commit or push. Just report branch and working tree changes.
+Do not automatically import this archive into GitHub or Codespaces.
+
+FINAL REPORT
+Return:
+1. Exact changed file list and why each changed.
+2. Exact Option C permissions and explicit legalContentManager claim consequence from current server-app.ts provisioning.
+3. Firestore rules changes and dataUrl UTF-8 65,536-byte enforcement.
+4. Storage claim-safety changes and unchanged permission semantics.
+5. Test runner/workflow independent execution details.
+6. `npm ci`, TypeScript, build, Firestore, Storage results with exact PASS/FAIL/BLOCKED counts.
+7. Before/after SHA-256 for production files and candidate files.
+8. Any test or requirement not verified.
+9. Handoff ZIP path and exact file list if generated.
+10. Explicit statement: no GitHub Sync, no commit, no push, no merge, no Firebase deploy.
+
+STOP CONDITIONS
+Stop without further edits if:
+- any expected baseline hash mismatches;
+- any production file changes;
+- any test suggests privilege escalation or cross-institution access;
+- rules compilation fails;
+- the actual schema conflicts with Option C;
+- the workflow would run after a failed safety guard;
+- any unlisted file requires modification;
+- the workspace contains no required candidate files.
+
+If a test fails, diagnose it and propose the next minimal candidate-only correction; do not weaken security expectations simply to obtain a green CI. After at most two minimal correction iterations, stop and report remaining failures rather than repeatedly changing authorization behavior.
+
+STATUS TERMS
+Use PASS only for successfully executed tests with captured output.
+Use FAIL for executed failures.
+Use BLOCKED for tests not executable in the current environment.
+Use NOT VERIFIED for remote GitHub/live Firebase states unavailable from this workspace.
+
+FINAL SAFETY STATEMENT
+End with:
+`STATUS: CANDIDATE IMPLEMENTATION COMPLETE ONLY IF VERIFIED — NO GIT SYNC — NO COMMIT — NO PUSH — NO MERGE — NO PRODUCTION DEPLOYMENT`

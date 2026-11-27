@@ -1,0 +1,16 @@
+{
+  "version": "4.2.1-PRO",
+  "buildTime": "2026-11-24T01:30:00Z",
+  "appName": "SeeraAI Legal Intelligence Platform",
+  "author": "Ayele Be Dha",
+  "forceUpdate": true,
+  "hidePrivateDataForVisitors": true,
+  "releaseNotes": "HAAROMFAMA DIRQAMAA (v4.2.1-PRO): Asxaa SeeraAI Gadaa & Madaallii Haqaa haaraa, link qooddameen ofumaan haaromuu, fi sirna yaada dhaabbilee dhaddacha ijoo irratti.",
+  "features": [
+    "Asxaa Haaraa SeeraAI (Scales of Justice + Odaa & Gadaa Cultural Emblem)",
+    "Namoonni linkiin seenan hundi battalatti version haarawaa argatu (Auto Link Sync)",
+    "Deep-Link Share dhaddacha ijoo irratti (Email, Telegram, WhatsApp, Social Media)",
+    "Sirna Yaadaa & Gaaffii Dhuunfaa Dhaabbilee Mirkanaa'aniif (Institutional Notes)",
+    "Firebase Auth & Session Isolation fi Sirna Offline/PWA Haaromfame"
+  ]
+}

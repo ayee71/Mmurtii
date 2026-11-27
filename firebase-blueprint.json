@@ -1,0 +1,1162 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Stores user settings and profile information.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Unique identifier for the user." },
+        "email": { "type": "string", "description": "User's email address." },
+        "visitorName": { "type": "string", "description": "User's display name or handle." },
+        "appLanguage": { "type": "string", "enum": ["om", "am", "en"], "description": "Preferred app language." },
+        "fontSize": { "type": "string", "enum": ["normal", "large"], "description": "Preferred font size." },
+        "autoDetectInput": { "type": "boolean", "description": "Whether to auto-detect input language." },
+        "aiModelTier": { "type": "string", "enum": ["flash", "pro", "deep_thinking"], "description": "AI model tier selection." },
+        "lawFirmBranding": { "type": "object", "description": "Custom law firm branding details." },
+        "referrerId": { "type": "string", "description": "User vanity referral ID." },
+        "appProtection": { "type": "object", "description": "Application protection settings." },
+        "passcodeHash": { "type": "string", "description": "Hashed passcode for sensitive access." },
+        "theme": { "type": "string", "enum": ["system", "light", "dark"], "description": "Preferred visual theme." },
+        "photoUrl": { "type": "string", "description": "Base64 encoded or URL reference of profile photo." },
+        "facebookLink": { "type": "string", "description": "Facebook profile link." },
+        "telegramLink": { "type": "string", "description": "Telegram link." },
+        "linkedinLink": { "type": "string", "description": "LinkedIn profile link." },
+        "appUsername": { "type": "string", "description": "Social-media style username for search and identity." },
+        "legalRole": { "type": "string", "description": "Legal professional role selected." },
+        "licenseOrInstitution": { "type": "string", "description": "Organization, bar, or institution affiliation." },
+        "activeSessions": { "type": "object", "description": "Map of sessionId to session details (device, browser, os, lastActive)." },
+        "courtId": { "type": "string", "description": "The institution ID this user belongs to." },
+        "legalUpdateSubscription": {
+          "type": "object",
+          "description": "User's email subscription preferences for legal updates.",
+          "properties": {
+            "optIn": { "type": "boolean", "description": "Whether the user opted-in for email notifications." },
+            "email": { "type": "string", "description": "Target email address for updates." },
+            "practiceAreas": { "type": "array", "description": "List of preferred practice areas selected." },
+            "frequency": { "type": "string", "enum": ["instant", "weekly", "monthly"], "description": "Notification frequency." }
+          }
+        },
+        "telegramSyncSettings": {
+          "type": "object",
+          "description": "User's Telegram legal feed sync preferences (enabledChannels and autoSyncFrequency).",
+          "properties": {
+            "enabledChannels": { "type": "array", "items": { "type": "string" } },
+            "autoSyncFrequency": { "type": "string", "enum": ["manual", "5m", "15m", "30m", "1h", "6h"] },
+            "updatedAt": { "type": "string" }
+          }
+        },
+        "updatedAt": { "type": "object", "description": "Server timestamp of last update." }
+      },
+      "required": ["uid", "email", "visitorName", "courtId"]
+    },
+    "DossierAudit": {
+      "title": "Court Dossier Audit Record",
+      "description": "Stores the results of a court record audit for history and tracking.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "courtName": { "type": "string" },
+        "fileName": { "type": "string" },
+        "content": { "type": "string" },
+        "auditResult": { "type": "string" },
+        "createdAt": { "type": "object" }
+      },
+      "required": ["userId", "auditResult", "createdAt"]
+    },
+    "SharedDraft": {
+      "title": "Shared Document Draft",
+      "description": "A document shared with a unique token for collaboration.",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "token": { "type": "string", "description": "Unique secure access token." },
+        "accessLevel": { "type": "string", "enum": ["view", "comment", "edit"] },
+        "comments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "authorName": { "type": "string" },
+              "text": { "type": "string" },
+              "createdAt": { "type": "object" }
+            }
+          }
+        },
+        "createdAt": { "type": "object" },
+        "expiresAt": { "type": "object" }
+      },
+      "required": ["ownerId", "content", "token", "createdAt"]
+    },
+    "SharedFolder": {
+      "title": "Shared Folder",
+      "description": "A folder shared with a unique token for access.",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string" },
+        "folderName": { "type": "string" },
+        "documentIds": { "type": "array", "items": { "type": "string" } },
+        "token": { "type": "string", "description": "Unique secure access token." },
+        "sharedWith": { "type": "array", "items": { "type": "string" }, "description": "List of user IDs granted access." },
+        "createdAt": { "type": "object" }
+      },
+      "required": ["ownerId", "folderName", "token", "createdAt"]
+    },
+    "AnalyticsEvent": {
+      "title": "Real-Time Analytics Event",
+      "description": "Live real-time stream of user actions, legal searches, document analyses, and visits.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "User UID who triggered the action." },
+        "userName": { "type": "string", "description": "Display name of the user/visitor." },
+        "actionType": { "type": "string", "description": "Action performed (e.g. visit, explain_law, doc_analysis, cassation, translate)." },
+        "category": { "type": "string", "description": "Legal topic or category." },
+        "details": { "type": "string", "description": "Details about query or document analyzed." },
+        "referrer": { "type": "string", "description": "Referral source or link creator." },
+        "createdAt": { "type": "object", "description": "Server timestamp when event occurred." }
+      },
+      "required": ["userId", "userName", "actionType", "createdAt"]
+    },
+    "FeedbackMessage": {
+      "title": "Feedback & User Message",
+      "description": "User opinions, feedback, suggestions, and legal consultation inquiries.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Sender user ID." },
+        "senderName": { "type": "string", "description": "Sender full name." },
+        "senderEmail": { "type": "string", "description": "Sender contact email." },
+        "contactInfo": { "type": "string", "description": "Sender phone, Telegram username, or contact handle." },
+        "topic": { "type": "string", "description": "Subject or topic of feedback/inquiry." },
+        "message": { "type": "string", "description": "The message body text." },
+        "rating": { "type": "number", "description": "Optional satisfaction rating (1-5)." },
+        "status": { "type": "string", "enum": ["new", "read", "resolved"], "description": "Message processing status." },
+        "createdAt": { "type": "object", "description": "Server timestamp when message was sent." }
+      },
+      "required": ["userId", "senderName", "message", "createdAt"]
+    },
+    "Annotation": {
+      "title": "Document Annotation",
+      "description": "User-created annotations on legal documents.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Creator user ID." },
+        "documentId": { "type": "string", "description": "ID of the document being annotated." },
+        "content": { "type": "string", "description": "The annotation note text." },
+        "rangeStart": { "type": "number", "description": "Start position of the highlighted text." },
+        "rangeEnd": { "type": "number", "description": "End position of the highlighted text." },
+        "createdAt": { "type": "object", "description": "Server timestamp when annotation was created." }
+      },
+      "required": ["userId", "documentId", "content", "rangeStart", "rangeEnd", "createdAt"]
+    },
+    "TelegramLegalDocument": {
+      "title": "Harvested Telegram Legal Document",
+      "description": "Proclamations, regulations, directives, and court cassation decisions extracted from Telegram channels like @wakoyeb and indexed for platform retrieval.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique ID for the harvested legal document." },
+        "channelHandle": { "type": "string", "description": "Telegram channel username or handle (e.g. wakoyeb)." },
+        "channelTitle": { "type": "string", "description": "Title of the Telegram source channel." },
+        "postUrl": { "type": "string", "description": "Direct URL link to the original Telegram post." },
+        "referenceNumber": { "type": "string", "description": "Extracted legal reference (e.g. Lakk. Galmee 214539, Labsii 242/2014)." },
+        "type": { "type": "string", "enum": ["proclamation", "regulation", "directive", "cassation_decision"], "description": "Detected legislation/decision type." },
+        "jurisdiction": { "type": "string", "enum": ["oromia", "federal"], "description": "Jurisdiction of the enactment." },
+        "category": { "type": "string", "description": "Legal topic category (e.g. labor, property_land, civil_contract, family)." },
+        "title": { "type": "object", "description": "Extracted trilingual titles (om, am, en)." },
+        "summary": { "type": "object", "description": "Extracted trilingual summary of the legal enactment or ruling." },
+        "keyPrinciples": { "type": "object", "description": "Extracted binding legal ratio / principle." },
+        "rawText": { "type": "string", "description": "Original raw message text from Telegram." },
+        "keyArticles": { "type": "array", "description": "List of referenced statutory articles extracted." },
+        "tags": { "type": "array", "description": "Searchable keywords and index tags." },
+        "yearEC": { "type": "number", "description": "Enactment Ethiopian calendar year." },
+        "yearGC": { "type": "number", "description": "Enactment Gregorian calendar year." },
+        "institutionId": { "type": "string", "description": "The institution ID this document belongs to. If null, it is a global/public document." },
+        "createdAt": { "type": "object", "description": "Server timestamp when stored in Firestore." }
+      },
+      "required": ["id", "channelHandle", "referenceNumber", "type", "jurisdiction", "title", "summary", "rawText", "createdAt"]
+    },
+    "TelegramLog": {
+      "title": "Telegram Webhook & Bot Processing Audit Log",
+      "description": "Audit records of incoming webhook updates, processed messages, and error diagnostics.",
+      "type": "object",
+      "properties": {
+        "updateId": { "type": "number", "description": "Telegram update ID." },
+        "status": { "type": "string", "enum": ["success", "failed"], "description": "Processing status." },
+        "updateType": { "type": "string", "description": "Type of update (message, callback_query, etc.)." },
+        "chatId": { "type": "number", "description": "Telegram chat or channel ID." },
+        "sender": { "type": "string", "description": "Username or first name of sender." },
+        "textSummary": { "type": "string", "description": "Preview of message text or command." },
+        "bodySummary": { "type": "string", "description": "Truncated JSON payload summary." },
+        "error": { "type": "string", "description": "Error details if processing failed." },
+        "ip": { "type": "string", "description": "Originating IP address." },
+        "timestamp": { "type": "string", "description": "ISO timestamp of the event." }
+      },
+      "required": ["status", "timestamp"]
+    },
+    "ObjectionTemplate": {
+      "title": "Objection Template",
+      "description": "Customizable legal objection templates grouped by category.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "label": { "type": "string" },
+        "category": { "type": "string", "enum": ["form", "content", "procedure"] },
+        "template": { "type": "string" },
+        "isDefault": { "type": "boolean" },
+        "createdAt": { "type": "object" }
+      },
+      "required": ["id", "label", "category", "template"]
+    },
+    "CourtSession": {
+      "title": "Courtroom Session (Dhaddacha)",
+      "description": "Stores a complete courtroom session including logs, witnesses, and procedural state, categorized by court level.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string", "description": "User-defined title or case number." },
+        "courtLevel": { "type": "string", "enum": ["firstInstance", "highCourt", "cassation"] },
+        "currentStepIndex": { "type": "number" },
+        "logs": { "type": "array" },
+        "witnesses": { "type": "array" },
+        "quickNotes": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "archived"] },
+        "createdAt": { "type": "object" },
+        "updatedAt": { "type": "object" }
+      },
+      "required": ["id", "userId", "title", "courtLevel", "createdAt"]
+    },
+    "KioskSession": {
+      "title": "Courtroom Kiosk Session",
+      "description": "Stores live state, configuration, activity logs, and remote diagnostics for a courtroom kiosk.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "institutionName": { "type": "string" },
+        "googleMeetLink": { "type": "string" },
+        "secondaryMeetLink": { "type": "string", "description": "Alternative meeting link for redundancy." },
+        "courtLogoUrl": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "inactive"] },
+        "autoJoin": { "type": "boolean" },
+        "logs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "timestamp": { "type": "string", "format": "date-time" },
+              "message": { "type": "string" },
+              "type": { "type": "string", "enum": ["info", "error", "command"] }
+            }
+          }
+        },
+        "config": { "type": "object" },
+        "lastScreenCapture": { "type": "string", "description": "Base64 data URL of the last remote screenshot." },
+        "captureTrigger": { "type": "object", "description": "Timestamp when a new capture is requested." },
+        "hardRefreshTrigger": { "type": "object" },
+        "resetTrigger": { "type": "object" },
+        "diagnosticsTrigger": { "type": "object" },
+        "lastUpdated": { "type": "object" }
+      }
+    },
+    "PaymentTransaction": {
+      "title": "Payment Transaction Record",
+      "description": "Records user payment transactions for subscription plans and credit purchases.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "userName": { "type": "string" },
+        "planId": { "type": "string" },
+        "amountETB": { "type": "number" },
+        "creditsAdded": { "type": "number" },
+        "paymentMethod": { "type": "string", "enum": ["telebirr", "cbe", "chapa", "card", "manual"] },
+        "networkProvider": { "type": "string" },
+        "transactionReference": { "type": "string" },
+        "status": { "type": "string", "enum": ["completed", "pending", "rejected"] },
+        "ownerAccount": { "type": "string" },
+        "createdAt": { "type": "object" }
+      },
+      "required": ["userId", "planId", "amountETB", "transactionReference", "status", "createdAt"]
+    },
+    "LegislationItem": {
+      "title": "Legislation Repository Record",
+      "description": "Statutory laws, proclamations, regulations, and directives repository.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string", "enum": ["proclamation", "regulation", "directive", "cassation_decision"] },
+        "jurisdiction": { "type": "string", "enum": ["oromia", "federal"] },
+        "number": { "type": "string" },
+        "title": { "type": "object" },
+        "authority": { "type": "object" },
+        "yearEC": { "type": "number" },
+        "yearGC": { "type": "number" },
+        "category": { "type": "string" },
+        "summary": { "type": "object" },
+        "fullTextArticles": { "type": "array" },
+        "keyPrinciples": { "type": "object" },
+        "status": { "type": "string", "enum": ["active", "amended", "repealed"] },
+        "lastUpdatedDate": { "type": "string" },
+        "tags": { "type": "array" },
+        "createdAt": { "type": "object" }
+      },
+      "required": ["id", "type", "jurisdiction", "number", "title", "status"]
+    },
+    "Discussion": {
+      "title": "Discussion Thread",
+      "description": "Discussion comments on a document or folder.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "targetId": { "type": "string", "description": "ID of the folder or document being discussed." },
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "text": { "type": "string" },
+        "meetingLink": { "type": "string", "description": "Shared meeting link for real-time discussion." },
+        "participants": { "type": "array", "items": { "type": "object" }, "description": "List of invited participants and their contact handles." },
+        "createdAt": { "type": "object" }
+      },
+      "required": ["id", "targetId", "authorId", "text", "createdAt"]
+    },
+    "LegalQnA": {
+      "title": "Legal Q&A Repository Record",
+      "description": "Precedent-backed question and answer legal knowledge repository.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "question": { "type": "string" },
+        "answer": { "type": "string" },
+        "category": { "type": "string" }
+      }
+    },
+    "SocialLegalPost": {
+      "title": "Social Legal Post Record",
+      "description": "Legal awareness updates and commentary posts.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "content": { "type": "string" },
+        "platform": { "type": "string" }
+      }
+    },
+    "TestDoc": {
+      "title": "Connection Test Document",
+      "description": "Test doc used for verifying Firestore server connectivity.",
+      "type": "object",
+      "properties": {
+        "connection": { "type": "string" }
+      }
+    },
+    "WebAuthnCredential": {
+      "title": "WebAuthn Biometric Credential",
+      "description": "Stores WebAuthn biometric credentials for user authentication.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "credentialId": { "type": "string" },
+        "publicKey": { "type": "string" },
+        "counter": { "type": "number" },
+        "transports": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["userId", "credentialId", "publicKey", "counter"]
+    },
+    "CourtInstitution": {
+      "title": "Court Judicial Institution",
+      "description": "Stores authorized court institutions, jurisdictions, and institutional admin access info.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "region": { "type": "string" },
+        "courtLevel": { "type": "string" },
+        "adminEmail": { "type": "string" },
+        "adminName": { "type": "string" },
+        "accessCode": { "type": "string" },
+        "status": { "type": "string" },
+        "approvedBy": { "type": "string" },
+        "customCourtName": { "type": "string", "description": "Display name overridden by institutional super-admin." },
+        "logoUrl": { "type": "string", "description": "Base64 encoded logo image for the court." }
+      },
+      "required": ["name", "adminEmail", "accessCode", "status"]
+    },
+    "CourtUser": {
+      "title": "Court Judicial Staff / Judge",
+      "description": "Stores judges and court legal officers provisioned by an authorized institutional court admin.",
+      "type": "object",
+      "properties": {
+        "institutionId": { "type": "string" },
+        "courtName": { "type": "string" },
+        "fullName": { "type": "string" },
+        "usernameOrEmail": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "passcode": { "type": "string" },
+        "role": { "type": "string" },
+        "bench": { "type": "string" },
+        "status": { "type": "string" },
+        "licenseNumber": { "type": "string" },
+        "employeeId": { "type": "string" },
+        "assignedCourtLevel": { "type": "string" },
+        "courtId": { "type": "string", "description": "The institution ID this staff belongs to." }
+      },
+      "required": ["institutionId", "fullName", "usernameOrEmail", "passcode", "role", "bench", "status", "courtId"]
+    },
+    "CourtAccessRequest": {
+      "title": "Court Institutional Accession Request",
+      "description": "Stores requests from judicial institutions seeking admin provisioning and onboarding.",
+      "type": "object",
+      "properties": {
+        "institutionName": { "type": "string" },
+        "contactPerson": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "courtLevel": { "type": "string" },
+        "jurisdiction": { "type": "string" },
+        "status": { "type": "string" }
+      },
+      "required": ["institutionName", "contactPerson", "email", "status"]
+    },
+    "SystemConfig": {
+      "title": "Global System Configuration",
+      "description": "Platform-wide system configuration settings managed exclusively by the owner.",
+      "type": "object",
+      "properties": {
+        "defaultAiModel": { "type": "string" },
+        "maintenanceMode": { "type": "boolean" },
+        "antiCloningActive": { "type": "boolean" },
+        "systemBroadcast": { "type": "string" },
+        "updatedBy": { "type": "string" },
+        "updatedAt": { "type": "object" }
+      }
+    },
+    "AdminActivityLog": {
+      "title": "Administrative Action Audit Log",
+      "description": "Audit records of all administrative actions executed by system administrators.",
+      "type": "object",
+      "properties": {
+        "actionType": { "type": "string" },
+        "adminEmail": { "type": "string" },
+        "target": { "type": "string" },
+        "details": { "type": "string" },
+        "timestamp": { "type": "object" }
+      },
+      "required": ["actionType", "adminEmail", "details"]
+    },
+    "AuditLogEntry": {
+      "title": "Administrative Audit Log Entry",
+      "description": "Stores detailed logs for administrative actions, bench assignments, and approvals.",
+      "type": "object",
+      "properties": {
+        "actionType": { "type": "string" },
+        "institutionId": { "type": "string" },
+        "targetId": { "type": "string" },
+        "performedBy": { "type": "string" },
+        "details": { "type": "string" },
+        "timestamp": { "type": "object" }
+      },
+      "required": ["actionType", "performedBy", "details", "timestamp"]
+    },
+    "VectorChunk": {
+      "title": "Vector Embedding Chunk",
+      "description": "Text chunk and its associated embedding vector for RAG.",
+      "type": "object",
+      "properties": {
+        "text": { "type": "string" },
+        "embedding": { "type": "array", "items": { "type": "number" } },
+        "metadata": { "type": "object" },
+        "createdAt": { "type": "object" }
+      },
+      "required": ["text", "embedding", "createdAt"]
+    },
+    "VectorFeedback": {
+      "title": "Vector Search Feedback",
+      "description": "Feedback on RAG-grounded AI responses.",
+      "type": "object",
+      "properties": {
+        "query": { "type": "string" },
+        "responseText": { "type": "string" },
+        "rating": { "type": "string", "enum": ["thumbs-up", "thumbs-down"] },
+        "timestamp": { "type": "object" },
+        "userId": { "type": "string" }
+      },
+      "required": ["query", "responseText", "rating", "timestamp", "userId"]
+    },
+    "AuthLog": {
+      "title": "Authentication Log",
+      "description": "Logs of user and biometric authentication events.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "action": { "type": "string" },
+        "timestamp": { "type": "object" },
+        "details": { "type": "string" }
+      }
+    },
+    "CourtStaffRequest": {
+      "title": "Court Staff Request",
+      "description": "Staff account provisioning requests for court personnel.",
+      "type": "object",
+      "properties": {
+        "courtId": { "type": "string" },
+        "staffName": { "type": "string" },
+        "role": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "object" }
+      }
+    },
+    "AirtimeRequest": {
+      "title": "Airtime Recharge Request",
+      "description": "User airtime and credit top-up requests.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "phoneNumber": { "type": "string" },
+        "amount": { "type": "number" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "object" }
+      }
+    },
+    "VerificationToken": {
+      "title": "Email Verification Token",
+      "description": "Tokens for URL email verification and account activation.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "name": { "type": "string" },
+        "used": { "type": "boolean" },
+        "createdAt": { "type": "object" }
+      }
+    },
+    "AdminActivityLogArchived": {
+      "title": "Archived Admin Log",
+      "description": "Archived administrator actions for historical compliance.",
+      "type": "object",
+      "properties": {
+        "actionType": { "type": "string" },
+        "details": { "type": "string" },
+        "timestamp": { "type": "object" }
+      }
+    },
+    "CaseDocket": {
+      "title": "Court Case Docket",
+      "description": "Judicial docket record, litigation lifecycle stages, and assignments.",
+      "type": "object",
+      "properties": {
+        "caseNumber": { "type": "string" },
+        "claimantName": { "type": "string" },
+        "respondentName": { "type": "string" },
+        "claimSubject": { "type": "string" },
+        "assignedJudge": { "type": "string" },
+        "status": { "type": "string" },
+        "nextHearingDate": { "type": "string" },
+        "deadline24hNotified": { "type": "boolean" },
+        "createdAt": { "type": "object" }
+      }
+    },
+    "CourtNotification": {
+      "title": "Court Notification",
+      "description": "Consolidated assignments and automated 24-hour hearing session alerts.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "body": { "type": "string" },
+        "recipientRole": { "type": "string" },
+        "recipientName": { "type": "string" },
+        "type": { "type": "string" },
+        "caseId": { "type": "string" },
+        "caseNumber": { "type": "string" },
+        "recipientUid": { "type": "string", "description": "UID of the user who should receive this notification." },
+        "isRead": { "type": "boolean" },
+        "createdAt": { "type": "object" }
+      }
+    },
+    "UserFeedback": {
+      "title": "AI Inaccuracy & Legal Feedback Report",
+      "description": "User reports of inaccuracies in AI-generated legal content, citations, or Cassation precedents.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "User ID of the submitter." },
+        "userEmail": { "type": "string", "description": "User email address if provided." },
+        "userName": { "type": "string", "description": "User display name." },
+        "category": { "type": "string", "enum": ["ai_inaccuracy", "missing_law", "translation_error", "hallucinated_article", "other"], "description": "Category of inaccuracy." },
+        "contentType": { "type": "string", "description": "Type of AI content being reported." },
+        "aiPromptQuery": { "type": "string", "description": "Prompt or search query reported." },
+        "reportedInaccuracy": { "type": "string", "description": "User description of inaccuracy." },
+        "suggestedCorrection": { "type": "string", "description": "User suggested correction or citation." },
+        "rating": { "type": "number", "description": "Optional satisfaction rating." },
+        "status": { "type": "string", "enum": ["pending", "reviewed", "resolved"], "description": "Processing status." },
+        "createdAt": { "type": "object", "description": "Server timestamp." }
+      },
+      "required": ["userId", "reportedInaccuracy", "createdAt"]
+    }
+  },
+  "firestore": {
+    "vector_feedback/{feedbackId}": {
+      "schema": "VectorFeedback",
+      "description": "Feedback for vector search results."
+    },
+    "vector_chunks/{chunkId}": {
+      "schema": "VectorChunk",
+      "description": "Storage for text chunks and embeddings for RAG."
+    },
+    "users/{userId}": {
+      "schema": "User",
+      "description": "Collection of user profiles keyed by user ID."
+    },
+    "users/{userId}/webauthn_credentials/{credentialId}": {
+      "schema": "WebAuthnCredential",
+      "description": "Collection of WebAuthn credentials for user authentication."
+    },
+    "payment_transactions/{txId}": {
+      "schema": "PaymentTransaction",
+      "description": "Payment records and reconciliation audit logs."
+    },
+    "courtroom_sessions/{sessionId}": {
+      "schema": "KioskSession",
+      "description": "Live state and control data for courtroom kiosks."
+    },
+    "analytics_events/{eventId}": {
+      "schema": "AnalyticsEvent",
+      "description": "Real-time feed of user interactions and feature usage without page reload."
+    },
+    "feedback_messages/{messageId}": {
+      "schema": "FeedbackMessage",
+      "description": "Real-time user feedback, comments, reviews, and consultation inbox messages."
+    },
+    "annotations/{annotationId}": {
+      "schema": "Annotation",
+      "description": "Annotations made by users on legal documents."
+    },
+    "telegram_legal_documents/{documentId}": {
+      "schema": "TelegramLegalDocument",
+      "description": "Harvested legal proclamations, regulations, and cassation rulings from public Telegram channels stored for platform indexing and retrieval."
+    },
+    "telegram_logs/{logId}": {
+      "schema": "TelegramLog",
+      "description": "Real-time audit log of incoming Telegram webhook updates, authentications, and bot dispatch logs."
+    },
+    "dossier_audits/{auditId}": {
+      "schema": "DossierAudit",
+      "description": "Historical record of court dossier audits performed by users for daily tracking."
+    },
+    "shared_drafts/{draftId}": {
+      "schema": "SharedDraft",
+      "description": "Access-controlled legal document drafts for collaborative review and commenting."
+    },
+    "shared_folders/{folderId}": {
+      "schema": "SharedFolder",
+      "description": "Access-controlled shared folder links."
+    },
+    "discussions/{discussionId}": {
+      "schema": "Discussion",
+      "description": "Discussion threads for documents and folders."
+    },
+    "objection_templates/{templateId}": {
+      "schema": "ObjectionTemplate",
+      "description": "Customizable legal objection templates grouped by category."
+    },
+    "legislation_repository/{docId}": {
+      "schema": "LegislationItem",
+      "description": "Repository of regional and federal legal proclamations."
+    },
+    "legal_qna_repository/{docId}": {
+      "schema": "LegalQnA",
+      "description": "Repository of legal questions and verified answers."
+    },
+    "social_legal_repository/{docId}": {
+      "schema": "SocialLegalPost",
+      "description": "Repository of legal awareness and case commentary posts."
+    },
+    "auth_logs/{logId}": {
+      "schema": "AuthLog",
+      "description": "Logs of WebAuthn biometric authentication attempts."
+    },
+    "court_institutions/{instId}": {
+      "schema": "CourtInstitution",
+      "description": "Registered and authorized court institutions."
+    },
+    "court_users/{userId}": {
+      "schema": "CourtUser",
+      "description": "Judges and court legal experts created by court admins."
+    },
+    "court_access_requests/{requestId}": {
+      "schema": "CourtAccessRequest",
+      "description": "Accession requests from judicial institutions."
+    },
+    "system_config/{configId}": {
+      "schema": "SystemConfig",
+      "description": "Platform-wide system configuration settings."
+    },
+    "admin_activity_logs/{logId}": {
+      "schema": "AdminActivityLog",
+      "description": "Historical audit logs of administrative actions."
+    },
+    "audit_logs/{logId}": {
+      "schema": "AuditLogEntry",
+      "description": "Detailed audit trail of administrative actions including bench assignments."
+    },
+    "test/{docId}": {
+      "schema": "TestDoc",
+      "description": "Connection test documents."
+    },
+    "court_staff_requests/{requestId}": {
+      "schema": "CourtStaffRequest",
+      "description": "Staff provisioning requests."
+    },
+    "airtime_requests/{requestId}": {
+      "schema": "AirtimeRequest",
+      "description": "User airtime and credit top-up requests."
+    },
+    "verifications/{tokenId}": {
+      "schema": "VerificationToken",
+      "description": "Verification tokens."
+    },
+    "admin_activity_logs_archived/{logId}": {
+      "schema": "AdminActivityLogArchived",
+      "description": "Archived administrative action logs."
+    },
+    "cases/{caseId}": {
+      "schema": "CaseDocket",
+      "description": "Court cases, litigation lifecycle dockets, and hearing schedules."
+    },
+    "admin_logs/{logId}": {
+      "schema": "AuditLogEntry",
+      "description": "Read-only audit trail of administrative actions for court admins."
+    },
+    "court_notifications/{notifId}": {
+      "schema": "CourtNotification",
+      "description": "Consolidated assignments and automated 24-hour hearing session push notifications."
+    },
+    "court_templates/{templateId}": {
+      "schema": "ObjectionTemplate",
+      "description": "Court document templates scoped by institutionId."
+    },
+    "user_feedback/{feedbackId}": {
+      "schema": "UserFeedback",
+      "description": "Reports of inaccuracies in AI-generated legal content."
+    },
+    "practice_cases/{caseId}": {
+      "schema": "PracticeCase",
+      "description": "Simulation cases for legal practice mode (e.g. @court.oromia.et users)."
+    },
+    "institutions/{institutionId}": {
+      "schema": "CourtInstitution",
+      "description": "Authorized court institutions with secure subcollections."
+    },
+    "institutions/{institutionId}/courtDocuments/{docId}": {
+      "schema": "CourtDocument",
+      "description": "Securely stored court documents for the specific institution."
+    },
+    "institutions/{institutionId}/auditLogs/{logId}": {
+      "schema": "AuditLogEntry",
+      "description": "Audit trail for document actions within an institution."
+    },
+    "cases/{caseId}/witness_statements/{stmtId}": {
+      "schema": "WitnessStatement",
+      "description": "Witness testimony summaries linked to specific case files."
+    },
+    "cases/{caseId}/physical_evidence/{evidenceId}": {
+      "schema": "PhysicalEvidence",
+      "description": "Physical exhibits and evidentiary documents submitted for a case."
+    },
+    "witness_statements/{stmtId}": {
+      "schema": "WitnessStatement",
+      "description": "Global index of witness testimonies for cross-examination references."
+    },
+    "legal_glossary/{termId}": {
+      "schema": "LegalGlossaryEntry",
+      "description": "Approved and archived trilingual Ethiopian legal terminology entries (Afaan Oromoo, Amharic, English) with searchTokens and source references."
+    },
+    "legal_glossary/{termId}/versions/{versionId}": {
+      "schema": "LegalGlossaryVersion",
+      "description": "Immutable snapshots of previous approved versions of legal glossary entries."
+    },
+    "glossary_submissions/{submissionId}": {
+      "schema": "GlossarySubmission",
+      "description": "User-submitted or AI-assisted draft legal glossary proposals and correction suggestions pending reviewer verification."
+    },
+    "glossary_audit_logs/{auditId}": {
+      "schema": "GlossaryAuditLog",
+      "description": "Append-only audit trail of glossary submissions, approvals, rejections, change requests, and archival decisions."
+    },
+    "translation_records/{translationId}": {
+      "schema": "TranslationRecord",
+      "description": "Server-issued minimal metadata records for cross-language legal translations (no full source or translated text)."
+    },
+    "translation_feedback/{feedbackId}": {
+      "schema": "TranslationFeedback",
+      "description": "User-submitted translation quality feedback linked to a server-issued translationId (user-visible status only)."
+    },
+    "translation_feedback/{feedbackId}/private_review/{reviewId}": {
+      "schema": "TranslationFeedbackPrivateReview",
+      "description": "Private reviewer/admin moderation decision, internal notes, and terminology outcome isolated from ordinary users."
+    },
+    "translation_feedback_rate_limits/{uid}": {
+      "schema": "TranslationFeedbackRateLimit",
+      "description": "Server-managed per-user hourly submission rate limit counters."
+    },
+    "translation_feedback_audit_logs/{auditId}": {
+      "schema": "TranslationFeedbackAuditLog",
+      "description": "Append-only audit trail of translation feedback submissions, moderation decisions, glossary escalations, and curated exports."
+    },
+    "seeraai_analyses/{analysisId}": {
+      "schema": "SeeraAIAnalysis",
+      "description": "Persisted Dual AI (OpenAI + Gemini) legal workflow analyses owned by individual verified users."
+    },
+    "precedent_comments/{commentId}": {
+      "schema": "PrecedentComment",
+      "description": "Private institutional notes and legal questions on Cassation Precedents restricted to verified institutional staff."
+    },
+    "system_settings/{settingId}": {
+      "schema": "SystemSetting",
+      "description": "Admin-managed system integration settings (such as TELEGRAM_WEBHOOK_URL) without storing private secrets."
+    }
+  },
+  "entities": {
+    "CourtDocument": {
+      "title": "Institutional Court Document",
+      "description": "Stores metadata for a document stored in institutional storage.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "folderId": { "type": "string" },
+        "fileName": { "type": "string" },
+        "contentType": { "type": "string" },
+        "size": { "type": "number" },
+        "storagePath": { "type": "string" },
+        "institutionId": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "object" },
+        "verified": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["uploading", "active", "upload_failed", "archived"] }
+      },
+      "required": ["id", "title", "folderId", "fileName", "storagePath", "institutionId", "status"]
+    },
+    "PracticeCase": {
+      "title": "Practice Simulation Case",
+      "description": "Stores state and progress for a legal practice simulation case.",
+      "type": "object",
+      "properties": {
+        "caseId": { "type": "string" },
+        "userId": { "type": "string", "description": "The user who created/is practicing with this case." },
+        "courtId": { "type": "string", "description": "The court institution this case belongs to (e.g. gurbicha)." },
+        "caseNumber": { "type": "string" },
+        "plaintiff": { "type": "string" },
+        "defendant": { "type": "string" },
+        "subject": { "type": "string" },
+        "status": { "type": "string", "enum": ["open", "processing", "judgment", "appealed", "closed"] },
+        "stage": { "type": "number", "description": "Current numeric stage (0-3)." },
+        "documents": { "type": "array", "items": { "type": "string" } },
+        "judgment": { "type": "string" },
+        "appealTarget": { "type": "string", "description": "The court where the case was sent for appeal." },
+        "createdAt": { "type": "object" },
+        "updatedAt": { "type": "object" }
+      },
+      "required": ["caseId", "userId", "status", "stage", "createdAt"]
+    },
+    "WitnessStatement": {
+      "title": "Witness Testimony Statement",
+      "description": "Testimony summary, credibility assessment, and cross-examination notes linked to a case.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "caseId": { "type": "string" },
+        "caseNumber": { "type": "string" },
+        "witnessName": { "type": "string" },
+        "witnessRole": { "type": "string", "enum": ["plaintiff_witness", "defendant_witness", "expert_witness", "court_witness"] },
+        "statementText": { "type": "string" },
+        "crossExaminationNotes": { "type": "string" },
+        "credibilityRating": { "type": "string", "enum": ["high", "moderate", "questionable"] },
+        "recordedBy": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "createdAt": { "type": "object" }
+      },
+      "required": ["id", "caseId", "witnessName", "witnessRole", "statementText"]
+    },
+    "PhysicalEvidence": {
+      "title": "Case Physical / Documentary Evidence",
+      "description": "Admissible or challenged evidence items logged in court docket.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "caseId": { "type": "string" },
+        "exhibitNumber": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "admissibilityStatus": { "type": "string", "enum": ["admissible", "rejected", "tendered", "marked_for_id", "objected"] },
+        "objectionNotes": { "type": "string" },
+        "reviewedBy": { "type": "string" },
+        "reviewedAt": { "type": "string" }
+      },
+      "required": ["id", "caseId", "admissibilityStatus"]
+    },
+    "LegalGlossaryEntry": {
+      "title": "Trilingual Legal Glossary Entry",
+      "description": "Verified trilingual legal glossary term across Afaan Oromoo, Amharic, and English.",
+      "type": "object",
+      "properties": {
+        "termId": { "type": "string" },
+        "conceptId": { "type": "string" },
+        "terms": { "type": "object" },
+        "definitions": { "type": "object" },
+        "usageNotes": { "type": "object" },
+        "translationNotes": { "type": "object" },
+        "noExactEquivalent": { "type": "object" },
+        "domain": { "type": "string" },
+        "jurisdiction": { "type": "array", "items": { "type": "string" } },
+        "sourceReferences": { "type": "array" },
+        "isGeneralLegalDefinition": { "type": "boolean" },
+        "noSourceJustification": { "type": "string" },
+        "status": { "type": "string", "enum": ["approved", "archived"] },
+        "version": { "type": "number" },
+        "searchTokens": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "updatedBy": { "type": "string" },
+        "reviewedAt": { "type": "string" },
+        "reviewedBy": { "type": "string" }
+      },
+      "required": ["termId", "conceptId", "terms", "definitions", "domain", "jurisdiction", "status", "version"]
+    },
+    "LegalGlossaryVersion": {
+      "title": "Legal Glossary Version Snapshot",
+      "description": "Archived snapshot of a prior approved version of a legal glossary entry.",
+      "type": "object",
+      "properties": {
+        "versionId": { "type": "string" },
+        "termId": { "type": "string" },
+        "version": { "type": "number" },
+        "snapshot": { "type": "object" },
+        "archivedAt": { "type": "string" },
+        "archivedBy": { "type": "string" },
+        "changeReason": { "type": "string" },
+        "submissionId": { "type": "string" }
+      },
+      "required": ["versionId", "termId", "version", "snapshot", "archivedAt", "archivedBy", "changeReason"]
+    },
+    "GlossarySubmission": {
+      "title": "Legal Glossary Proposal / Correction",
+      "description": "Pending or reviewed proposal for a new trilingual glossary term or revision.",
+      "type": "object",
+      "properties": {
+        "submissionId": { "type": "string" },
+        "submissionType": { "type": "string", "enum": ["new_term", "revision"] },
+        "targetTermId": { "type": "string" },
+        "proposedEntry": { "type": "object" },
+        "incompleteLanguages": { "type": "array", "items": { "type": "string" } },
+        "aiAssistedDraft": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["pending", "needs_changes", "approved", "rejected"] },
+        "submittedBy": { "type": "string" },
+        "submittedAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "reviewedBy": { "type": "string" },
+        "reviewedAt": { "type": "string" },
+        "reviewerNote": { "type": "string" },
+        "reason": { "type": "string" }
+      },
+      "required": ["submissionId", "submissionType", "proposedEntry", "status", "submittedBy", "submittedAt"]
+    },
+    "GlossaryAuditLog": {
+      "title": "Legal Glossary Audit Record",
+      "description": "Immutable append-only audit trail for glossary lifecycle actions.",
+      "type": "object",
+      "properties": {
+        "auditId": { "type": "string" },
+        "action": { "type": "string" },
+        "termId": { "type": "string" },
+        "submissionId": { "type": "string" },
+        "actorUid": { "type": "string" },
+        "actorRole": { "type": "string" },
+        "previousVersion": { "type": "number" },
+        "newVersion": { "type": "number" },
+        "decision": { "type": "string" },
+        "reason": { "type": "string" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["auditId", "action", "actorUid", "reason", "timestamp"]
+    },
+    "TranslationRecord": {
+      "title": "Issued Translation Metadata Record",
+      "description": "Minimal server-issued metadata tracking a legal translation without storing full source or translated text.",
+      "type": "object",
+      "properties": {
+        "translationId": { "type": "string" },
+        "ownerUid": { "type": "string" },
+        "institutionId": { "type": "string" },
+        "sourceLanguage": { "type": "string", "enum": ["om", "am", "en"] },
+        "targetLanguage": { "type": "string", "enum": ["om", "am", "en"] },
+        "isRewrite": { "type": "boolean" },
+        "module": { "type": "string", "enum": ["translate_view", "document_analysis", "voice_ocr_converter", "api_translate"] },
+        "provider": { "type": "string" },
+        "model": { "type": "string" },
+        "promptVersion": { "type": "string" },
+        "glossaryVersion": { "type": "string" },
+        "appVersion": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["translationId", "sourceLanguage", "targetLanguage", "isRewrite", "module", "provider", "model", "createdAt"]
+    },
+    "TranslationFeedback": {
+      "title": "Trilingual Translation Quality Feedback",
+      "description": "User evaluation and structured issue report for a specific cross-language legal translation.",
+      "type": "object",
+      "properties": {
+        "feedbackId": { "type": "string" },
+        "schemaVersion": { "type": "string" },
+        "translationId": { "type": "string" },
+        "sourceLanguage": { "type": "string", "enum": ["om", "am", "en"] },
+        "targetLanguage": { "type": "string", "enum": ["om", "am", "en"] },
+        "direction": { "type": "string" },
+        "module": { "type": "string" },
+        "translationCreatedAt": { "type": "string" },
+        "provider": { "type": "string" },
+        "model": { "type": "string" },
+        "promptVersion": { "type": "string" },
+        "glossaryVersion": { "type": "string" },
+        "appVersion": { "type": "string" },
+        "overallRating": { "type": "number" },
+        "accuracyRating": { "type": "number" },
+        "terminologyRating": { "type": "number" },
+        "completenessRating": { "type": "number" },
+        "readabilityRating": { "type": "number" },
+        "issueCategories": { "type": "array", "items": { "type": "string" } },
+        "comment": { "type": "string" },
+        "terminologyCorrection": { "type": "object" },
+        "submittedBy": { "type": "string" },
+        "institutionId": { "type": "string" },
+        "submittedAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "status": { "type": "string", "enum": ["submitted", "under_review", "accepted", "rejected", "needs_clarification"] },
+        "consentToCuratedDataset": { "type": "boolean" },
+        "consentRecordedAt": { "type": "string" },
+        "escalatedGlossarySubmissionId": { "type": "string" }
+      },
+      "required": ["feedbackId", "schemaVersion", "translationId", "sourceLanguage", "targetLanguage", "direction", "overallRating", "issueCategories", "submittedBy", "submittedAt", "status", "consentToCuratedDataset"]
+    },
+    "TranslationFeedbackPrivateReview": {
+      "title": "Private Translation Feedback Review Metadata",
+      "description": "Reviewer-only moderation metadata isolated from ordinary users.",
+      "type": "object",
+      "properties": {
+        "feedbackId": { "type": "string" },
+        "institutionId": { "type": "string" },
+        "reviewedBy": { "type": "string" },
+        "reviewedAt": { "type": "string" },
+        "reviewDecision": { "type": "string", "enum": ["under_review", "accepted", "rejected", "needs_clarification"] },
+        "decisionReason": { "type": "string" },
+        "reviewerNotes": { "type": "string" },
+        "terminologyOutcome": { "type": "string", "enum": ["accepted", "rejected", "context_dependent", "needs_legal_research"] }
+      },
+      "required": ["feedbackId", "reviewedBy", "reviewedAt", "reviewDecision", "decisionReason"]
+    },
+    "TranslationFeedbackRateLimit": {
+      "title": "Translation Feedback Hourly Rate Limit Window",
+      "description": "Server-managed rate limiting counter per verified UID.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "windowStartMs": { "type": "number" },
+        "count": { "type": "number" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["uid", "windowStartMs", "count"]
+    },
+    "TranslationFeedbackAuditLog": {
+      "title": "Translation Feedback Audit Trail Entry",
+      "description": "Immutable append-only audit trail for feedback moderation, terminology escalations, and dataset exports.",
+      "type": "object",
+      "properties": {
+        "auditId": { "type": "string" },
+        "action": { "type": "string", "enum": ["FEEDBACK_SUBMITTED", "FEEDBACK_MODERATED", "TERMINOLOGY_ESCALATED", "CURATED_DATASET_EXPORTED"] },
+        "feedbackId": { "type": "string" },
+        "translationId": { "type": "string" },
+        "actorUid": { "type": "string" },
+        "actorRole": { "type": "string" },
+        "institutionId": { "type": "string" },
+        "previousStatus": { "type": "string" },
+        "newStatus": { "type": "string" },
+        "decisionReason": { "type": "string" },
+        "exportFormat": { "type": "string", "enum": ["jsonl", "csv"] },
+        "exportedCount": { "type": "number" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["auditId", "action", "actorUid", "timestamp"]
+    },
+    "SeeraAIAnalysis": {
+      "title": "SEERAAI Dual AI Legal Analysis",
+      "description": "Stores Dual AI (OpenAI GPT-4o & Google Gemini) legal evaluation, comparative synthesis, and optional Telegram dispatch metadata.",
+      "type": "object",
+      "properties": {
+        "analysisId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "userId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "mode": { "type": "string", "enum": ["openai", "gemini", "dual"] },
+        "prompt": { "type": "string", "minLength": 1, "maxLength": 20000 },
+        "context": { "type": "string", "maxLength": 40000 },
+        "openaiResponse": { "type": "string", "maxLength": 50000 },
+        "geminiResponse": { "type": "string", "maxLength": 50000 },
+        "synthesis": { "type": "string", "maxLength": 50000 },
+        "telegramChatId": { "type": "string", "maxLength": 64 },
+        "telegramDispatched": { "type": "boolean" },
+        "createdAt": { "type": "string", "maxLength": 64 },
+        "timestamp": { "type": "object" }
+      },
+      "required": ["analysisId", "userId", "mode", "prompt", "createdAt", "timestamp"]
+    },
+    "PrecedentComment": {
+      "title": "Institutional Precedent Private Note / Legal Question",
+      "description": "Stores verified institutional private notes or legal questions attached to a specific Cassation Precedent.",
+      "type": "object",
+      "properties": {
+        "commentId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "precedentId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "fileNumber": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "authorUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "authorName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "authorRole": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "institutionId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "institutionName": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "commentType": { "type": "string", "enum": ["private_note", "legal_question"] },
+        "visibility": { "type": "string", "enum": ["institution_private", "personal_private"] },
+        "content": { "type": "string", "minLength": 2, "maxLength": 4000 },
+        "status": { "type": "string", "enum": ["open", "resolved"] },
+        "createdAt": { "type": "object" },
+        "updatedAt": { "type": "object" }
+      },
+      "required": [
+        "commentId",
+        "precedentId",
+        "fileNumber",
+        "authorUid",
+        "authorName",
+        "authorRole",
+        "institutionId",
+        "institutionName",
+        "commentType",
+        "visibility",
+        "content",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "SystemSetting": {
+      "title": "Admin System Setting",
+      "description": "Stores verified administrator-configured system integration settings (no secrets), such as TELEGRAM_WEBHOOK_URL and bot validation status.",
+      "type": "object",
+      "properties": {
+        "settingId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "telegramWebhookUrl": { "type": "string", "minLength": 12, "maxLength": 512 },
+        "updatedBy": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "updatedByEmail": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "updatedAt": { "type": "object" },
+        "lastValidationStatus": { "type": "string", "enum": ["green", "yellow", "red"] },
+        "lastValidatedAt": { "type": "string", "maxLength": 64 },
+        "lastValidationMessage": { "type": "string", "maxLength": 500 }
+      },
+      "required": ["settingId", "telegramWebhookUrl", "updatedBy", "updatedByEmail", "updatedAt"]
+    }
+  }
+}
+

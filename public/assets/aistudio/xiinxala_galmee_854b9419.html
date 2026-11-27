@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="om">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Xiinxala Galmee</title>
+<style>
+:root{--bg:#f6f7f4;--card:#fff;--ink:#1d2421;--mute:#5d6862;--line:#d8ddd6;--acc:#1f5f4a;--accink:#fff}
+@media (prefers-color-scheme:dark){:root{--bg:#141a17;--card:#1c2420;--ink:#e8ede9;--mute:#9aa79f;--line:#33403a;--acc:#5fb394;--accink:#0f1a15}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Georgia,"Times New Roman",serif}
+main{max-width:760px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:1.6rem;margin:8px 0 4px}
+p.sub{color:var(--mute);margin:0 0 20px}
+section{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+h2{font-size:1.05rem;margin:0 0 10px}
+label{display:block;font-size:.9rem;color:var(--mute);margin:10px 0 4px}
+select,textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px}
+textarea{min-height:120px;resize:vertical}
+button{font:inherit;cursor:pointer;border-radius:8px;padding:10px 16px;border:1px solid var(--acc);background:var(--acc);color:var(--accink);margin:12px 8px 0 0}
+button.alt{background:transparent;color:var(--acc)}
+button:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+#analysisResult{white-space:pre-wrap;min-height:80px}
+#status{color:var(--mute);font-size:.9rem;margin-top:8px}
+</style>
+</head>
+<body>
+<main>
+<h1>Xiinxala Galmee</h1>
+<p class="sub">Murtii mana murtii aanaa fi olaanaa maxxansiitii, xiinxala uumiitii, report .txt gadi buusi.</p>
+
+<section id="qabiyyee">
+<h2>Qabiyyee Murtii</h2>
+<label for="aiModel">AI filatame</label>
+<select id="aiModel">
+<option>Claude</option><option>ChatGPT</option><option>Gemini</option><option>Copilot</option>
+</select>
+<label for="caseType">Madda Seeraa (akaakuu dhimmaa)</label>
+<select id="caseType">
+<option value="civil">Seera Hariiroo Siivilii (Civil Code)</option>
+<option value="land">Seera Lafa Baadiyyaa</option>
+<option value="family">Seera Maatii</option>
+<option value="criminal">Seera Yakkaa</option>
+<option value="procedure">Seera Adeemsa Falmii Siivilii</option>
+</select>
+<label for="aanaaCaseText">Murtii Mana Murtii Aanaa</label>
+<textarea id="aanaaCaseText" placeholder="Murtii guutuu as maxxansi"></textarea>
+<label for="olaaCaseText">Murtii Mana Murtii Olaanaa</label>
+<textarea id="olaaCaseText" placeholder="Murtii guutuu as maxxansi"></textarea>
+</section>
+
+<section id="ragaa">
+<h2>Madaallii Ragaa fi Adeemsa Falmii</h2>
+<label for="ragaaText">Ragaa (dirqama)</label>
+<textarea id="ragaaText" placeholder="Ragaa galmee keessa jiru"></textarea>
+<label for="falmiiText">Adeemsa falmii (himannaa, deebii, ragaa, murtii)</label>
+<textarea id="falmiiText" placeholder="Adeemsa falmii gabaabsii"></textarea>
+<label for="yaadaText">Yaada fi goolaba kee</label>
+<textarea id="yaadaText" placeholder="Yaada ofii kee"></textarea>
+</section>
+
+<section id="uumi">
+<h2>Xiinxala Uumi</h2>
+<button type="button" onclick="generateAnalysis()">Xiinxala uumi</button>
+</section>
+
+<section id="buaa">
+<h2>Bu'aa Xiinxalaa</h2>
+<div id="analysisResult" aria-live="polite">Xiinxalli asitti mul'ata.</div>
+<button type="button" onclick="downloadReport()">Download Report (.txt)</button>
+<button type="button" class="alt" onclick="copyReport()">Koppii godhi</button>
+<div id="status"></div>
+</section>
+</main>
+
+<script>
+var reportText = "";
+
+function val(id){ return document.getElementById(id).value.trim(); }
+
+function generateAnalysis(){
+  var aanaa = val("aanaaCaseText");
+  var olaanaa = val("olaaCaseText");
+  var ai = document.getElementById("aiModel").value;
+  var sel = document.getElementById("caseType");
+  var caseType = sel.options[sel.selectedIndex].text;
+  var ragaa = val("ragaaText");
+  var falmii = val("falmiiText");
+  var yaada = val("yaadaText");
+
+  if(!aanaa && !olaanaa){
+    document.getElementById("status").textContent = "Dura murtii aanaa yookaan olaanaa maxxansi.";
+    return;
+  }
+
+  reportText =
+"XIINXALA GALMEE\n" +
+"================\n\n" +
+"AI Filatame: " + ai + "\n\n" +
+"AKAAKUU DHIMMAA:\n" + caseType + "\n\n" +
+"1. DHUFAATII DHIMMICHAA\n" +
+"Galmeen mana murtii aanaa fi galmeen mana murtii olaanaa wal bira qabamee qoratameera.\n\n" +
+"2. MURTII MANA MURTII AANAA\n" +
+(aanaa ? aanaa.substring(0, 500) + (aanaa.length > 500 ? " ..." : "") : "Hin kennamne.") + "\n\n" +
+"3. MURTII MANA MURTII OLAANAA\n" +
+(olaanaa ? olaanaa.substring(0, 500) + (olaanaa.length > 500 ? " ..." : "") : "Hin kennamne.") + "\n\n" +
+"4. MADAALLII RAGAA\n" +
+(ragaa || "Ragaan galmee keessatti dhiyaate irratti xiinxalli taasifameera.") + "\n\n" +
+"5. TUMAALEE SEERAA\n" +
+"Madda seeraa filatame: " + caseType + "\n\n" +
+"6. ADEEMSA FALMII\n" +
+(falmii || "Himannaa, Deebii, Ragaa, Murtii walitti qabamee qoratameera.") + "\n\n" +
+"7. YAADA FI BU'AA\n" +
+(yaada || "Murtiin mana murtiiwwan lamaanii wal bira qabamee madaalameera.") + "\n\n" +
+"8. GOOLABA\n" +
+"Bu'aan xiinxalaa kun qorannoo dursaa irratti hundaa'eedha.\n";
+
+  document.getElementById("analysisResult").textContent = reportText;
+  document.getElementById("status").textContent = "Xiinxalli qophaa'eera. Amma download gochuu dandeessa.";
+}
+
+function downloadReport(){
+  var text = reportText || document.getElementById("analysisResult").textContent;
+  if(!reportText){
+    document.getElementById("status").textContent = "Dura \"Xiinxala uumi\" cuqaasi.";
+    return;
+  }
+  // BOM: Afaan Oromoo fi qubee addaa sirriitti akka mul'atuuf
+  var blob = new Blob(["\uFEFF" + text], {type: "text/plain;charset=utf-8"});
+  var url = URL.createObjectURL(blob);
+  var link = document.createElement("a");
+  link.href = url;
+  link.download = "Xiinxala_Galmee.txt";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  document.getElementById("status").textContent = "Xiinxala_Galmee.txt gadi buufameera.";
+}
+
+function copyReport(){
+  if(!reportText){
+    document.getElementById("status").textContent = "Dura \"Xiinxala uumi\" cuqaasi.";
+    return;
+  }
+  var done = function(){ document.getElementById("status").textContent = "Koppii godhameera."; };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(reportText).then(done, function(){
+      document.getElementById("status").textContent = "Koppii hin milkoofne. Barreeffama filadhuu koppii godhi.";
+    });
+  } else {
+    document.getElementById("status").textContent = "Koppii hin milkoofne. Barreeffama filadhuu koppii godhi.";
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,124 @@
+SEERAAI PRO — OPTION C PLAN REVIEW: FINAL PRE-IMPLEMENTATION SAFETY CHECK
+READ-ONLY ONLY — DO NOT CHANGE FILES
+
+CONTEXT
+The user approved Option C for the Legal Expert authorization policy:
+- verified, institution-affiliated legal_expert may create and update shared legislation_repository entries;
+- legal_expert may NOT delete those shared entries;
+- delete remains Admin-only;
+- no promotion to admin/superadmin or unrelated court permissions;
+- candidate-only changes are allowed only after a separate explicit implementation approval.
+A prior audit report proposed changes to:
+- firestore.rules.phase8b5.3.integrated.candidate
+- tests/firestore.rules.test.ts
+- package.json
+- .github/workflows/rules-test.yml
+Production files that must remain untouched:
+- firestore.rules
+- storage.rules
+- firebase.json
+
+The previous report identified:
+1. Optional `dataUrl` accesses causing Firestore test [7] failure.
+2. `legislation_repository` write rule using `isAdmin()` only, causing test [10] failure.
+3. Missing custom-claim fields accessed by dot notation in Firestore helper functions.
+4. `npm test` uses `&&`, preventing Storage tests from running if Firestore tests fail.
+5. Storage candidate helper functions may also directly access optional custom claims.
+6. `/app/applet` was not a Git repository; therefore local branch/remote state is not verifiable.
+
+IMPORTANT: The previous proposal is NOT approved for implementation yet. This task is a final read-only validation of the plan, not an implementation request.
+
+TASK 1 — CHECK THE GLOBAL REPOSITORY SCOPE
+The report verified that `legislation_repository` is a global/shared top-level collection with federal and Oromia legislation/cassation materials and no `institutionId` field.
+Explain precisely:
+- `hasInstitution()` proves only that a legal_expert account has an institution claim.
+- It does NOT scope a write to a particular institution's records because the target collection/documents have no institutionId field.
+- Under the proposed rule, every verified institutional legal_expert satisfying the predicate can create/update the shared global repository, potentially across both federal and Oromia entries.
+Verify whether the existing schema has jurisdiction-specific claims or any other resource-level ownership/jurisdiction metadata that could restrict this scope. Do not invent such fields.
+If no restriction exists, clearly label the policy consequence. Keep the approved Option C baseline as:
+  create/update: isAdmin() OR verified legalContentManager claim OR verified legal_expert with valid institution claim
+  delete: Admin only
+Do not grant judge/court_admin write access through the broad `isLegalRepositoryManager()` helper.
+Do not change `isLegalRepositoryManager()` in this task; it may be intentionally used on telegram_* collections. Report its scope as a separate audit item, not a proven vulnerability without examining intended product policy and tests.
+
+TASK 2 — VALIDATE RULE SYNTAX AND OPTIONAL CLAIM SAFETY
+Inspect exact current candidate rules and verify syntax/behavior of:
+- `request.auth.token.get('email_verified', false)`
+- `.get('admin', false)`, `.get('role', '')`, `.get('courtRole', '')`, `.get('legalContentManager', false)`, `.get('institutionId', '')`
+- `Map.get('dataUrl', null)` for absent, null, string, number, list, and map values.
+Check any remaining unsafe direct property access, especially `request.auth.token.firebase.sign_in_provider`. Do not assume all nested maps/claims exist; verify Firebase Auth token shape and current helper guards.
+Check helper function call depth and rule compiler compatibility.
+A candidate helper may call another helper, but ensure total function call depth remains within Firebase's documented limit and that no recursive calls are introduced.
+If compilation cannot be run in the workspace, state that it remains unverified.
+
+TASK 3 — FIX THE 64 KB MEANING
+The prior proposal used `String.size() <= 65536` but described the limit as 65536 BYTES.
+Firebase Security Rules `String.size()` returns the number of characters, not UTF-8 bytes. `String.toUtf8()` returns bytes; `Bytes.size()` returns the number of bytes.
+Verify this using official Firebase Rules references.
+Determine whether the product contract intends:
+A. 65,536 characters, or
+B. 65,536 UTF-8 bytes.
+The reported dataUrl is typically an ASCII/base64 string, where characters equal bytes, but the rules do not appear to enforce ASCII/base64 unless an existing rule does.
+Do not silently change the current contract. Recommend byte-count validation using `.toUtf8().size()` if the stated policy is truly bytes; add a multibyte UTF-8 regression test. Otherwise explicitly rename the limit as characters.
+Preserve optional behavior: field absent and explicit null should be accepted only if consistent with current schema; non-string values denied; valid strings at the inclusive limit accepted; above-limit denied.
+
+TASK 4 — CHECK THE STORAGE EMULATOR DEPENDENCY
+Inspect `storage.rules.phase8b5.4.integrated.candidate` and `tests/storage.rules.test.ts` for any cross-service calls such as `firestore.get()` or `firestore.exists()`.
+If Storage rules rely on Firestore data, a Storage-only emulator invocation may be insufficient. Firebase documentation requires Firestore and Storage emulators to work together for cross-service Storage rules.
+Therefore:
+- verify dependencies first;
+- if Storage needs Firestore, keep BOTH emulators running during the Storage suite, even though only the Storage test file is executed;
+- likewise, it is acceptable to start both emulators for the Firestore suite if shared setup needs them.
+Do not recommend `--only storage` until the exact rules prove that Firestore is not required.
+
+TASK 5 — VALIDATE CI EXIT-CODE AND STEP CONDITIONS
+Review the proposed workflow design carefully.
+The prior proposal used `if: always()` for Storage test and final guard. Check that:
+- Storage runs after Firestore failure, but only if preflight/guard, dependency installation, and candidate-integrity checks passed.
+- Storage must NOT run after a failed isolation guard or failed setup merely because `always()` is true.
+- Use explicit step IDs and a guarded condition such as an `always()`/`!cancelled()` condition plus successful preflight and install outcomes, adapting to actual step IDs.
+- Record Firestore and Storage outputs and exit codes independently.
+- Final workflow must fail if either exit code is nonzero or missing.
+- Handle `spawnSync()` failure correctly if a Node runner script is proposed: a null status accompanied by `error` or `signal` must be treated as failure, never converted to zero.
+Prefer explicit workflow steps with independent `test:firestore` and `test:storage` scripts. Avoid rewriting the package.json `test` script with a fragile one-line JS expression unless necessary and fully tested.
+Keep `firebase.emulator.test.json` and explicit project `demo-seeraai-test`; never use production `leafy-rush-xvd6f`.
+
+TASK 6 — STORAGE OPTIONAL CLAIMS
+Inspect the Storage candidate helper functions (isAdmin, effectiveCourtRole, belongsToInstitution) for direct access to optional claims. Determine which claims are actually optional according to the auth contexts and tests. Propose a candidate-only `.get()` hardening only where safe and necessary. Do not alter live `storage.rules`.
+
+TASK 7 — TEST MATRIX VALIDATION
+Review the proposed tests. Make sure:
+- Legal Expert create/update succeeds only under the approved condition.
+- Legal Expert delete is denied; Admin delete is allowed if current product policy supports it.
+- verified legal_expert with missing institutionId is denied.
+- legal_expert without email_verified is denied.
+- judge and court_admin are denied writes to the global legislation_repository unless another explicit policy authorizes them.
+- `legalContentManager` behavior is separately asserted and stays verified.
+- legal_expert still cannot manage users, roles, admin logs, audit immutability, admin settings, or other institutions' restricted court records.
+- do not add a cross-institution check to the global legislation collection unless the schema has a real per-record scope. Test cross-institution isolation against institution-scoped courtDocuments/cases instead.
+- dataUrl absent, null, correct type, wrong type, at exact boundary, over boundary, and multibyte data are covered.
+- Storage suite runs and reports even if Firestore assertions fail.
+- negative access tests use assertFails and positive access tests use assertSucceeds, with distinct test accounts and no state leakage.
+
+DELIVERABLE
+Return:
+1. Corrected assessment of the previous report (what is sound, what needs correction).
+2. Exact Option C permission semantics and the consequence of global repository scope.
+3. Verified official Firebase Rules semantics for Map.get, String.size, String.toUtf8, Bytes.size and emulator cross-service requirements.
+4. Any flaws in the previous proposed diffs.
+5. Corrected candidate-only plan and test matrix.
+6. Corrected CI step pseudocode (not a file edit).
+7. Exact list of files that would need candidate-only edits.
+8. Remaining human policy question, only if genuinely unresolved.
+9. State clearly what is not verified due to lack of .git / live GitHub/Firebase access.
+
+STRICT PROHIBITIONS
+- No file edits, creation, deletion, formatting or renaming.
+- No `git` mutations, commit, push, merge, branch creation, sync or pull request.
+- No Firebase deploy, no production rule publication, no Cloud Run or Hosting release.
+- Do not modify production firestore.rules, storage.rules or firebase.json.
+- No secret values or credentials.
+- Do not report tests as passing unless they were run and actual outputs inspected.
+
+End with:
+STATUS: READ-ONLY FINAL DESIGN REVIEW — NO FILES MODIFIED — NO PUSH — NO MERGE — NO PRODUCTION DEPLOYMENT

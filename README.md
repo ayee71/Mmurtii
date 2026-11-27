@@ -13,3 +13,14 @@ Professional trilingual Ethiopian legal research, statutory reference, document 
 1. Install dependencies (requires **Node.js >= 22.12.0**):
    ```bash
    npm install
+   ```
+2. Copy `.env.example` to `.env` and configure your server-side secrets (`GEMINI_API_KEY`, Firebase, Telegram tokens).
+3. Run the development server:
+   ```bash
+   npm run dev
+   ```
+4. Build and start for production:
+   ```bash
+   npm run build
+   npm start
+   ```

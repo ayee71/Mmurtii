@@ -1,0 +1,285 @@
+import React, { useState } from 'react';
+import { Language, translations } from '../i18n/translations';
+import { useAuth } from '../context/AuthContext';
+import { getStoredOwnerKey } from '../services/referralTracking';
+import { isOwnerAccount } from '../services/ownerAuth';
+import { isCourtAccessAuthorized } from '../services/courtInstitutionService';
+import { useReadingMode } from '../context/ReadingModeContext';
+
+interface BottomNavbarProps {
+  currentLang: Language;
+  activeTab: string;
+  onTabChange: (tab: string) => void;
+}
+
+export const BottomNavbar: React.FC<BottomNavbarProps> = ({
+  currentLang,
+  activeTab,
+  onTabChange,
+}) => {
+  const t = translations[currentLang];
+  const { user, profile } = useAuth();
+  const { isReadingMode, toggleReadingMode } = useReadingMode();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const [hasPremiumLicense, setHasPremiumLicense] = React.useState<boolean>(() => {
+    return localStorage.getItem('seera_is_premium') === 'true';
+  });
+
+  const [isCourtAuth, setIsCourtAuth] = React.useState<boolean>(isCourtAccessAuthorized());
+
+  React.useEffect(() => {
+    const handleCourtAuthUpdate = () => {
+      setIsCourtAuth(isCourtAccessAuthorized());
+    };
+    window.addEventListener('seera_court_session_changed', handleCourtAuthUpdate);
+    return () => window.removeEventListener('seera_court_session_changed', handleCourtAuthUpdate);
+  }, []);
+
+  const isOwner = isOwnerAccount(
+    user?.email || (profile as any)?.email,
+    profile?.visitorName || profile?.appUsername,
+    getStoredOwnerKey()
+  );
+
+  const isPremium = isOwner || profile?.role === 'premium' || (profile as any)?.subscriptionTier === 'premium' || (profile as any)?.isPremium === true || hasPremiumLicense;
+
+  const mainTabs = [
+    { 
+      id: 'home', 
+      labelOm: 'Mana', 
+      labelAm: 'መነሻ', 
+      labelEn: 'Home', 
+      emoji: '🏠' 
+    },
+    { 
+      id: 'explainLaw', 
+      labelOm: 'Seera', 
+      labelAm: 'ሕግ', 
+      labelEn: 'Law', 
+      emoji: '⚖️' 
+    },
+    { 
+      id: 'documentAnalysis', 
+      labelOm: 'Xiinxala', 
+      labelAm: 'ትንተና', 
+      labelEn: 'Analysis', 
+      emoji: '📄' 
+    },
+    { 
+      id: 'citation', 
+      labelOm: 'Wabii', 
+      labelAm: 'ዋቢ', 
+      labelEn: 'Citation', 
+      emoji: '🔍' 
+    },
+  ];
+
+  const baseSections = [
+    { id: 'home', label: t.nav.home, emoji: '🏠', desc: 'Maallaqa fuula duraa fi seensa' },
+    { id: 'cassation', label: currentLang === 'om' ? '⚖️ Baafata Murtii Ijibbaataa (Vol 1-25)' : currentLang === 'am' ? '⚖️ የሰበር ውሳኔዎች ማውጫ (ቅጽ 1-25)' : '⚖️ Cassation Master Index (Vol 1-25)', emoji: '⚖️', desc: 'Federal Supreme Court Cassation Decisions Vol 1-25' },
+    { id: 'cassationImporter', label: currentLang === 'om' ? '📥 Faayila Galchi (Importer)' : currentLang === 'am' ? '📥 ፋይል ጫኝ (Importer)' : '📥 File Importer', emoji: '📥', desc: 'Cassation Index Ingestion' },
+    { id: 'library', label: currentLang === 'om' ? 'Kuusaa Sanadootaa' : 'Document Library', emoji: '📂', desc: 'Access legal documents' },
+    { id: 'personnelFolder', label: currentLang === 'om' ? '📁 Fooldara Mana Murtii' : '📁 Court Folder', emoji: isCourtAuth ? '🏛️' : '🔒', desc: 'Judge/Court staff work & operations' },
+    { id: 'templates', label: t.nav.templates, emoji: '📝', desc: 'Sanadoota qophaa\'anii' },
+    { id: 'citation', label: currentLang === 'om' ? 'Wabii Seeraa' : 'Citation Finder', emoji: '🔍', desc: 'AI citation search' },
+    { id: 'create', label: t.nav.create, emoji: '✍️', desc: 'Drafting legal docs' },
+    { id: 'explainLaw', label: t.nav.explainLaw, emoji: '⚖️', desc: 'Legal explanation' },
+    { id: 'documentAnalysis', label: t.nav.docAnalysis, emoji: '📄', desc: 'Analyze docs' },
+    {
+      id: 'xiinxalaGalmee',
+      label: currentLang === 'om' ? 'Xiinxala Galmee (Aanaa vs Olaanaa)' : currentLang === 'am' ? 'የመዝገብ ንጽጽር ትንተና' : 'Xiinxala Galmee (Lower vs High Court)',
+      emoji: '⚖️',
+      desc: 'Murtii mana murtii aanaa fi olaanaa wal bira qabi',
+    },
+    { id: 'translate', label: t.nav.translate, emoji: '🌐', desc: 'Legal translation' },
+    { id: 'socialMedia', label: t.nav.social, emoji: '📱', desc: 'Social posts' },
+    { id: 'glossary', label: t.nav.glossary, emoji: '📖', desc: 'Legal terminology' },
+    { id: 'comparison', label: t.nav.compareLaw, emoji: '⚖️', desc: 'Analysis' },
+    { id: 'integration', label: t.nav.integration, emoji: '⚡', desc: 'AI Architecture' },
+    { id: 'meeting', label: currentLang === 'om' ? 'Walgahii & Marii' : 'Meeting & Conference', emoji: '📹', desc: 'Video conference' },
+    { id: 'myContent', label: t.nav.myContent, emoji: '📁', desc: 'Sanadoota koo kuufaman' },
+  ];
+
+  const allSections = isOwner
+    ? [
+        ...baseSections,
+        { id: 'adminDashboard', label: 'Admin Dashboard', emoji: '🛡️', desc: 'To\'annoo mirkaneessa fayyadamtootaa, analytics & config' },
+        { id: 'analyticsFeedback', label: t.nav.analyticsFeedback || 'Hordoffii & Yaada', emoji: '📊', desc: 'Baayyina namootaa, live activity & inbox' },
+        { id: 'settings', label: t.nav.settings, emoji: '⚙️', desc: 'Qindeessaa fi chaappaa biiroo' },
+      ]
+    : [
+        ...baseSections,
+        { id: 'settings', label: t.nav.settings, emoji: '⚙️', desc: 'Qindeessaa fi chaappaa biiroo' },
+      ];
+
+  const handleSelectTab = (id: string) => {
+    onTabChange(id);
+    setIsMenuOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  return (
+    <>
+      {/* Bottom Docked Navigation Bar for Handheld Devices */}
+      <nav aria-label="Mobile Navigation" className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#002347] border-t border-[#D4AF37] shadow-2xl pb-safe">
+        <div className="grid grid-cols-5 items-center h-16 px-1">
+          {mainTabs.map((item) => {
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => handleSelectTab(item.id)}
+                className={`flex flex-col items-center justify-center h-full min-h-[44px] px-1 transition-all ${
+                  isActive
+                    ? 'text-[#FFD700] font-bold'
+                    : 'text-[#E0E0E0] hover:text-[#FFD700]'
+                }`}
+                title={currentLang === 'om' ? item.labelOm : currentLang === 'am' ? item.labelAm : item.labelEn}
+              >
+                <div className={`p-1 rounded-xl transition-colors ${isActive ? 'bg-[#FFD700]/20' : ''}`}>
+                  <span className="text-lg">{item.emoji}</span>
+                </div>
+                <span className="text-[10px] tracking-tight mt-0.5 truncate max-w-full font-medium">
+                  {currentLang === 'om' ? item.labelOm : currentLang === 'am' ? item.labelAm : item.labelEn}
+                </span>
+              </button>
+            );
+          })}
+
+          {/* More / All Sections Trigger */}
+          <button
+            onClick={() => setIsMenuOpen(true)}
+            className={`flex flex-col items-center justify-center h-full min-h-[44px] px-1 transition-all ${
+              isMenuOpen || !mainTabs.some(t => t.id === activeTab)
+                ? 'text-[#FFD700] font-bold'
+                : 'text-[#E0E0E0] hover:text-[#FFD700]'
+            }`}
+            title="Sections & Menu"
+          >
+            <div className="p-1 rounded-xl bg-[#FFD700]/10 border border-[#D4AF37]/30">
+              <span className="text-lg">📂</span>
+            </div>
+            <span className="text-[10px] tracking-tight mt-0.5 truncate max-w-full font-medium">
+              Menu
+            </span>
+          </button>
+        </div>
+      </nav>
+
+      {/* All Sections Bottom Sheet Modal */}
+      {isMenuOpen && (
+        <div className="md:hidden fixed inset-0 z-50 bg-black/80 flex flex-col justify-end animate-fadeIn">
+          <div 
+            className="absolute inset-0" 
+            onClick={() => setIsMenuOpen(false)} 
+            aria-hidden="true"
+          />
+          <div className="relative bg-slate-900 border-t border-slate-800 rounded-t-3xl p-6 max-h-[85vh] overflow-y-auto space-y-4 shadow-2xl animate-slideUp pb-12">
+            {/* Handle bar */}
+            <div className="w-12 h-1.5 bg-slate-700 rounded-full mx-auto" />
+
+            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+              <div>
+                <h3 className="text-base font-bold text-slate-100 font-serif-legal">
+                  Qajeelcha Seeraa fi Baafata (All Sections)
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Kutaa barbaaddan cuqaasuun 1-thumb press tiin argadhaa.
+                </p>
+              </div>
+              <button
+                onClick={() => setIsMenuOpen(false)}
+                className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-slate-300 hover:text-white min-h-[44px] min-w-[44px]"
+                aria-label="Close menu"
+              >
+                ✕
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                toggleReadingMode();
+                setIsMenuOpen(false);
+              }}
+              className={`w-full flex items-center justify-between gap-3 p-3.5 rounded-2xl border text-left transition-all min-h-[48px] ${
+                isReadingMode
+                  ? 'bg-amber-500 text-slate-950 border-amber-400 font-bold'
+                  : 'bg-slate-950 border-slate-800 text-amber-300 hover:bg-slate-800'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-xl">📖</span>
+                <div>
+                  <div className="text-xs font-bold">
+                    {currentLang === 'om'
+                      ? 'Haala Dubbisaa (Reading Mode)'
+                      : currentLang === 'am'
+                        ? 'የንባብ ሁኔታ (Reading Mode)'
+                        : 'Reading Mode (Distraction-Free)'}
+                  </div>
+                  <div className={`text-[11px] ${isReadingMode ? 'text-slate-900' : 'text-slate-400'}`}>
+                    {currentLang === 'om'
+                      ? 'Sidebar & Menu dhoksee fuula guutuutti dubbisi'
+                      : 'Hide sidebar & navigation for full-screen reading'}
+                  </div>
+                </div>
+              </div>
+              <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-black/20">
+                {isReadingMode ? 'ON' : 'OFF'}
+              </span>
+            </button>
+
+            <div className="grid grid-cols-1 gap-2.5 pt-2">
+              {allSections.map((sec) => {
+                const isActive = activeTab === sec.id;
+                const firestoreRole = profile?.role || profile?.legalRole;
+                const hasStrictPersonnelRole = isOwner || firestoreRole === 'court_personnel' || firestoreRole === 'admin' || firestoreRole === 'judge';
+                const isCourtBenchItem = sec.id === 'courtWork' || sec.id === 'personnelFolder';
+                const isLocked = isCourtBenchItem && !isCourtAuth && !hasStrictPersonnelRole;
+
+                return (
+                  <button
+                    key={sec.id}
+                    onClick={() => handleSelectTab(sec.id)}
+                    className={`flex items-center gap-3.5 p-4 rounded-2xl border text-left transition-all min-h-[52px] ${
+                      isActive
+                        ? 'bg-amber-500/15 border-amber-500 text-amber-300 shadow-md font-bold'
+                        : 'bg-slate-950 border border-slate-800 text-slate-200 hover:bg-slate-800'
+                    }`}
+                  >
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 relative ${isActive ? 'bg-amber-500 text-slate-950' : 'bg-slate-900 text-amber-400 border border-slate-800'}`}>
+                      <span className="text-xl">{sec.emoji}</span>
+                      {isLocked && (
+                        <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[9px] flex items-center justify-center font-bold">
+                          🔒
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold truncate flex items-center justify-between">
+                        <span>{sec.label}</span>
+                        {isLocked && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 font-mono font-bold border border-rose-500/30">
+                            🔒 Hojjetaa Qofa
+                          </span>
+                        )}
+                        {isCourtBenchItem && (isCourtAuth || hasStrictPersonnelRole) && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono font-bold border border-emerald-500/30">
+                            ✓ Authorized
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[11px] text-slate-400 truncate mt-0.5">{sec.desc}</div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
